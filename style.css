@@ -84,6 +84,9 @@ select {
   margin: 10px 0;
 }
 
+
+/* Кнопки */
+
 button {
   width: 100%;
   padding: 12px;
@@ -108,6 +111,44 @@ button:disabled {
   cursor: not-allowed;
   background: #555;
 }
+
+
+/* Кнопка голосования + ссылка */
+
+.button-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.button-row .vote-button {
+  flex: 1;
+}
+
+
+.link-button {
+  width: 45px;
+  height: 45px;
+  min-width: 45px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #1769ff;
+  color: white;
+
+  border-radius: 10px;
+  text-decoration: none;
+
+  font-size: 22px;
+}
+
+
+.link-button:hover {
+  background: #0d56d9;
+}
+
 
 
 /* Слайдер */
