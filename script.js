@@ -8,6 +8,14 @@ const employees = [
 
 const employeeSelect = document.getElementById("employeeSelect");
 employeeSelect.addEventListener("change", () => {
+    const buttons = document.querySelectorAll(".vote-button");
+
+    buttons.forEach(button => {
+        button.disabled = employeeSelect.value === "";
+        button.style.opacity = employeeSelect.value === "" ? "0.5" : "1";
+        button.style.cursor = employeeSelect.value === "" ? "not-allowed" : "pointer";
+    });
+});
     document.querySelectorAll(".vote-button").forEach(button => {
         button.disabled = !employeeSelect.value;
     });
@@ -56,7 +64,7 @@ records.forEach(record => {
             ❤️ ${fields["Количество голосов"] || 0} голосов
           </div>
 
-          <button class="vote-button" disabled>
+          <button class="vote-button" disabled style="opacity:0.5; cursor:not-allowed;">
     Голосовать
 </button>
         </div>
