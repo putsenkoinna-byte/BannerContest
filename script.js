@@ -260,11 +260,13 @@ function renderWorks(){
             ?
             `
             <a 
-              class="link-button"
-              href="${fields["Ссылка на пост"]}"
-              target="_blank">
-
-              Открыть пост
+  class="link-button"
+  href="${fields["Ссылка на пост"]}"
+  target="_blank"
+  title="Открыть пост"
+>
+  🔗
+</a>
 
             </a>
             `
