@@ -171,10 +171,18 @@ document.addEventListener("click", async(e)=>{
 
 
 
-  const existingVote = votes.find(vote =>
+  const existingVote = votes.find(vote => {
+
+  const workId = vote.fields["Contest Work"]?.[0];
+
+  const votedWork = works.find(work => work.id === workId);
+
+  return (
     vote.fields["Voter Name"] === voterName &&
-    vote.fields["Username"] === author
+    votedWork?.fields?.Username === author
   );
+
+});
 
 
 
