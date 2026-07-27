@@ -1,8 +1,3 @@
-const BASE_ID = "appSxQXkQdS7Z9V6b";
-
-const WORKS_TABLE = "tblw7e0Mp2HGsym5n";
-const VOTES_TABLE = "tblbzFEy8wRU63bv1";
-
 const employees = [
   "Рома",
   "Вика",
@@ -23,51 +18,51 @@ employees.forEach(name => {
 
 
 async function loadWorks() {
+  try {
+    const response = await fetch("/api/works");
+    const data = await response.json();
 
-  const response = await fetch(
-    `https://api.airtable.com/v0/${BASE_ID}/${WORKS_TABLE}`
-  );
+    worksContainer.innerHTML = "";
 
-  const data = await response.json();
+    data.records.forEach(record => {
 
-  worksContainer.innerHTML = "";
+      const fields = record.fields;
 
-  data.records.forEach(record => {
+      if (!fields.Username || !fields["Конкурсные работы"]) {
+        return;
+      }
 
-    const fields = record.fields;
+      const images = fields["Конкурсные работы"];
 
-    if (!fields["Username"] || !fields["Конкурсные работы"]) {
-      return;
-    }
+      const card = document.createElement("div");
+      card.className = "card";
 
-    const image =
-      fields["Конкурсные работы"][0]?.url;
+      card.innerHTML = `
+        <img src="${images[0].url}" alt="work">
 
-    const card = document.createElement("div");
+        <div class="card-content">
+          <div class="username">
+            @${fields.Username}
+          </div>
 
-    card.className = "card";
+          <div class="votes">
+            ❤️ ${fields["Количество голосов"] || 0} голосов
+          </div>
 
-    card.innerHTML = `
-      <img src="${image}">
-      <div class="card-content">
-        <div class="username">
-          ${fields["Username"]}
+          <button>
+            Голосовать
+          </button>
         </div>
+      `;
 
-        <div class="votes">
-          ❤️ ${fields["Количество голосов"] || 0} голосов
-        </div>
+      worksContainer.appendChild(card);
 
-        <button>
-          Голосовать
-        </button>
-      </div>
-    `;
+    });
 
-    worksContainer.appendChild(card);
-
-  });
-
+  } catch(error) {
+    console.error(error);
+    worksContainer.innerHTML = "Ошибка загрузки работ";
+  }
 }
 
 
