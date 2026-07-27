@@ -10,6 +10,7 @@ const employeeSelect = document.getElementById("employeeSelect");
 const worksContainer = document.getElementById("works");
 
 let votes = [];
+let works = [];
 
 
 employees.forEach(name => {
@@ -28,114 +29,180 @@ async function loadVotes() {
 }
 
 
-function updateButtons() {
-  document.querySelectorAll(".vote-button").forEach(button => {
-
-    const workId = button.dataset.work;
-    const currentVote = votes.find(vote => 
-      vote.fields["Contest Work"]?.includes(workId) &&
-      vote.fields["Voter Name"] === employeeSelect.value
-    );
-
-    if (currentVote) {
-      button.textContent = "Убрать голос";
-      button.dataset.voteId = currentVote.id;
-      button.classList.add("remove");
-    } else {
-      button.textContent = "Голосовать";
-      button.classList.remove("remove");
-    }
-
-    button.disabled = employeeSelect.value === "";
-
-  });
-}
-
-
-employeeSelect.addEventListener("change", updateButtons);
-
-
 async function loadWorks() {
 
-  try {
+  const response = await fetch("/api/works");
+  const data = await response.json();
 
-    const response = await fetch("/api/works");
-    const data = await response.json();
+  works = data.records || [];
 
-    worksContainer.innerHTML = "";
-
-    const records = data.records || [];
-
-    records.forEach(record => {
-
-      const fields = record.fields;
-
-      if (
-        !fields.Username ||
-        !fields["Конкурсные работы"] ||
-        !fields["Конкурсные работы"].length
-      ) return;
+  renderWorks();
+}
 
 
-      const card = document.createElement("div");
-      card.className = "card";
+function getAuthorVotes(username) {
+  return votes.find(vote =>
+    vote.fields["Voter Name"] === employeeSelect.value &&
+    vote.fields["Username"] === username
+  );
+}
 
 
-      card.innerHTML = `
-        <img src="${fields["Конкурсные работы"][0].url}" alt="work">
+function renderMedia(files) {
 
-        <div class="card-content">
+  const file = files[0];
 
-          <div class="username">
-            ${fields.Username}
-          </div>
+  if (!file) return "";
 
-          <div class="votes">
-            ❤️ ${fields["Количество голосов"] || 0} голосов
-          </div>
+  if (file.type && file.type.startsWith("video")) {
 
-          <button class="vote-button" data-work="${record.id}" disabled>
-            Голосовать
-          </button>
+    return `
+      <video controls>
+        <source src="${file.url}" type="${file.type}">
+      </video>
+    `;
 
-        </div>
-      `;
-
-
-      worksContainer.appendChild(card);
-
-    });
-
-
-    updateButtons();
-
-
-  } catch(error) {
-    console.error(error);
   }
+
+  return `
+    <img src="${file.url}" alt="work">
+  `;
+}
+
+
+
+function renderWorks() {
+
+  worksContainer.innerHTML = "";
+
+
+  works.forEach(record => {
+
+    const fields = record.fields;
+
+    if (
+      !fields.Username ||
+      !fields["Конкурсные работы"]?.length
+    ) return;
+
+
+    const authorVote = getAuthorVotes(fields.Username);
+
+
+    const card = document.createElement("div");
+
+    card.className = "card";
+
+
+    card.innerHTML = `
+
+      ${renderMedia(fields["Конкурсные работы"])}
+
+
+      <div class="card-content">
+
+        <div class="username">
+          ${fields.Username}
+        </div>
+
+
+        <div class="votes">
+          ❤️ ${fields["Количество голосов"] || 0} голосов
+        </div>
+
+
+        <button 
+          class="vote-button ${authorVote ? "remove" : ""}"
+          data-work="${record.id}"
+          data-author="${fields.Username}"
+          ${employeeSelect.value ? "" : "disabled"}
+        >
+
+        ${
+          authorVote
+          ? "Убрать голос"
+          : "Голосовать"
+        }
+
+        </button>
+
+
+      </div>
+
+    `;
+
+
+    worksContainer.appendChild(card);
+
+  });
 
 }
 
 
 
-document.addEventListener("click", async (e)=>{
+employeeSelect.addEventListener("change", () => {
 
-  if(!e.target.classList.contains("vote-button")) return;
+  renderWorks();
+
+});
+
+
+
+
+document.addEventListener("click", async(e)=>{
+
+
+  if(!e.target.classList.contains("vote-button"))
+    return;
 
 
   const button = e.target;
 
+
   const voterName = employeeSelect.value;
 
-  if(!voterName) return;
+  const contestWork = button.dataset.work;
+
+  const author = button.dataset.author;
 
 
-  const action = button.classList.contains("remove")
+  if(!voterName)
+    return;
+
+
+
+  const existingVote = votes.find(vote =>
+    vote.fields["Voter Name"] === voterName &&
+    vote.fields["Username"] === author
+  );
+
+
+
+  const oldText = button.textContent;
+
+
+  if(existingVote) {
+
+    button.textContent = "Удаление...";
+    
+  } else {
+
+    button.textContent = "Голосуем...";
+
+  }
+
+
+  button.disabled = true;
+
+
+
+  const action = existingVote
     ? "delete"
     : "add";
 
 
-  await fetch("/api/vote",{
+
+  const response = await fetch("/api/vote",{
 
     method:"POST",
 
@@ -146,7 +213,7 @@ document.addEventListener("click", async (e)=>{
     body:JSON.stringify({
 
       voterName,
-      contestWork:button.dataset.work,
+      contestWork,
       action
 
     })
@@ -154,16 +221,33 @@ document.addEventListener("click", async (e)=>{
   });
 
 
+
+  if(!response.ok){
+
+    button.textContent = oldText;
+    button.disabled = false;
+
+    return;
+
+  }
+
+
+
   await loadVotes();
 
-  updateButtons();
+
+  renderWorks();
 
 
 });
 
 
 
+
 (async()=>{
+
   await loadVotes();
+
   await loadWorks();
+
 })();
