@@ -91,7 +91,7 @@ document.addEventListener("click", async (e) => {
 
   if (!voterName) return;
 
-  await fetch("/api/vote", {
+  const response = await fetch("/api/vote", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -101,6 +101,15 @@ document.addEventListener("click", async (e) => {
       contestWork
     })
   });
+
+  const result = await response.json();
+
+  console.log("Vote result:", result);
+
+  if (!response.ok) {
+    alert("Ошибка голосования");
+    return;
+  }
 
   e.target.textContent = "Голос учтен";
   e.target.disabled = true;
