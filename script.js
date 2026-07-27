@@ -89,6 +89,8 @@ async function loadWorks() {
 
   works = data.records || [];
 
+renderWorks();
+
   renderWorks();
 
 }
