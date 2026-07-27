@@ -100,24 +100,71 @@ function hasCurrentWorkVote(workId) {
 
 function renderMedia(files) {
 
-  const file = files[0];
-
-  if (!file) return "";
+  if (!files || !files.length) return "";
 
 
-  if (file.type?.startsWith("video")) {
+  if (files.length === 1) {
+
+    const file = files[0];
+
+
+    if (file.type?.startsWith("video")) {
+
+      return `
+        <video controls>
+          <source src="${file.url}" type="${file.type}">
+        </video>
+      `;
+
+    }
+
 
     return `
-      <video controls>
-        <source src="${file.url}" type="${file.type}">
-      </video>
+      <img src="${file.url}" alt="work">
     `;
 
   }
 
 
   return `
-    <img src="${file.url}" alt="work">
+    <div class="slider">
+
+      <button class="slider-prev">‹</button>
+
+      <div class="slider-items">
+
+        ${files.map((file, index) => {
+
+          if (file.type?.startsWith("video")) {
+
+            return `
+              <video 
+                class="slider-item ${index === 0 ? "active" : ""}"
+                controls
+              >
+                <source src="${file.url}" type="${file.type}">
+              </video>
+            `;
+
+          }
+
+
+          return `
+            <img 
+              class="slider-item ${index === 0 ? "active" : ""}"
+              src="${file.url}"
+              alt="work"
+            >
+          `;
+
+        }).join("")}
+
+      </div>
+
+
+      <button class="slider-next">›</button>
+
+    </div>
   `;
 
 }
@@ -196,6 +243,50 @@ function renderWorks() {
   });
 
 }
+
+
+
+document.addEventListener("click", e => {
+
+  if (
+    !e.target.classList.contains("slider-prev") &&
+    !e.target.classList.contains("slider-next")
+  ) return;
+
+
+  const slider = e.target.closest(".slider");
+
+  const items = slider.querySelectorAll(".slider-item");
+
+
+  let current = [...items].findIndex(item =>
+    item.classList.contains("active")
+  );
+
+
+  items[current].classList.remove("active");
+
+
+  if (e.target.classList.contains("slider-next")) {
+
+    current++;
+
+    if (current >= items.length)
+      current = 0;
+
+  } else {
+
+    current--;
+
+    if (current < 0)
+      current = items.length - 1;
+
+  }
+
+
+  items[current].classList.add("active");
+
+});
 
 
 
