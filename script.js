@@ -21,12 +21,10 @@ employees.forEach(name => {
 
 
 async function loadVotes() {
-
   const response = await fetch("/api/votes");
   const data = await response.json();
 
   votes = data.records || [];
-
 }
 
 
@@ -117,6 +115,7 @@ function renderMedia(files) {
 
     }
 
+
     return `
       <img src="${file.url}" alt="work">
     `;
@@ -131,34 +130,29 @@ function renderMedia(files) {
 
       <div class="slider-items">
 
-        ${files.map((file, index) => {
+        ${files.map((file,index)=>`
 
-          if (file.type?.startsWith("video")) {
-
-            return `
-              <video 
-                class="slider-item ${index === 0 ? "active" : ""}"
-                controls
-              >
-                <source src="${file.url}" type="${file.type}">
-              </video>
-            `;
-
+          ${
+            file.type?.startsWith("video")
+            ?
+            `
+            <video 
+              class="slider-item ${index===0?"active":""}"
+              controls>
+              <source src="${file.url}" type="${file.type}">
+            </video>
+            `
+            :
+            `
+            <img
+              class="slider-item ${index===0?"active":""}"
+              src="${file.url}">
+            `
           }
 
-
-          return `
-            <img
-              class="slider-item ${index === 0 ? "active" : ""}"
-              src="${file.url}"
-              alt="work"
-            >
-          `;
-
-        }).join("")}
+        `).join("")}
 
       </div>
-
 
       <button type="button" class="slider-next">›</button>
 
@@ -174,12 +168,12 @@ function renderWorks() {
   worksContainer.innerHTML = "";
 
 
-  works.forEach(record => {
+  works.forEach(record=>{
 
     const fields = record.fields;
 
 
-    if (
+    if(
       !fields.Username ||
       !fields["Конкурсные работы"]?.length
     ) return;
@@ -191,7 +185,7 @@ function renderWorks() {
 
     const card = document.createElement("div");
 
-    card.className = "card";
+    card.className="card";
 
 
     card.innerHTML = `
@@ -213,8 +207,8 @@ function renderWorks() {
 
         <div class="button-row">
 
-          <button 
-            class="vote-button ${currentWorkVote ? "remove" : ""}"
+          <button
+            class="vote-button ${currentWorkVote?"remove":""}"
             data-work="${record.id}"
             data-author="${fields.Username}"
             ${employeeSelect.value && !authorVote || currentWorkVote ? "" : "disabled"}
@@ -222,10 +216,10 @@ function renderWorks() {
 
           ${
             currentWorkVote
-              ? "Убрать голос"
-              : authorVote
-                ? "За автора уже отдан голос"
-                : "Голосовать"
+            ? "Убрать голос"
+            : authorVote
+              ? "За автора уже отдан голос"
+              : "Голосовать"
           }
 
           </button>
@@ -233,20 +227,20 @@ function renderWorks() {
 
           ${
             fields["Ссылка на пост"]
-              ? `
-                <a 
-                  class="link-button"
-                  href="${fields["Ссылка на пост"]}"
-                  target="_blank"
-                >
-                  🔗
-                </a>
-              `
-              : ""
+            ?
+            `
+            <a 
+              class="link-button"
+              href="${fields["Ссылка на пост"]}"
+              target="_blank">
+              🔗
+            </a>
+            `
+            :
+            ""
           }
 
         </div>
-
 
       </div>
 
@@ -261,9 +255,10 @@ function renderWorks() {
 document.addEventListener("click", async e => {
 
 
-  if (e.target.classList.contains("slider-next") ||
-      e.target.classList.contains("slider-prev")) {
-
+  if (
+    e.target.classList.contains("slider-next") ||
+    e.target.classList.contains("slider-prev")
+  ) {
 
     const slider = e.target.closest(".slider");
 
@@ -312,29 +307,15 @@ document.addEventListener("click", async e => {
 
   const voterName = employeeSelect.value;
   const contestWork = button.dataset.work;
+  const author = button.dataset.author;
 
 
   if (!voterName)
     return;
 
 
+
   const removing = button.classList.contains("remove");
-
-
-  const playingVideos = [];
-
-  document.querySelectorAll("video").forEach(video => {
-
-    if (!video.paused) {
-
-      playingVideos.push({
-        src: video.currentSrc,
-        time: video.currentTime
-      });
-
-    }
-
-  });
 
 
 
@@ -348,7 +329,12 @@ document.addEventListener("click", async e => {
     );
 
 
+    button.classList.remove("remove");
+    button.textContent = "Голосовать";
+
+
   } else {
+
 
     votes.push({
       id: "temp",
@@ -358,45 +344,42 @@ document.addEventListener("click", async e => {
       }
     });
 
+
+    button.classList.add("remove");
+    button.textContent = "Убрать голос";
+
   }
 
 
 
-  renderWorks();
+  const votesBlock = button
+    .closest(".card")
+    .querySelector(".votes");
 
 
+  if (votesBlock) {
 
-  document.querySelectorAll("video").forEach(video => {
+    votesBlock.textContent =
+      `❤️ ${getVotesForWork(contestWork)} голосов`;
 
-    const saved = playingVideos.find(item =>
-      video.currentSrc.includes(item.src)
-    );
-
-
-    if (saved) {
-
-      video.currentTime = saved.time;
-
-      video.play();
-
-    }
-
-  });
+  }
 
 
 
   await fetch("/api/vote", {
 
-    method: "POST",
+    method:"POST",
 
-    headers: {
-      "Content-Type": "application/json"
+    headers:{
+      "Content-Type":"application/json"
     },
 
-    body: JSON.stringify({
+    body:JSON.stringify({
+
       voterName,
       contestWork,
       action: removing ? "delete" : "add"
+
     })
 
   });
