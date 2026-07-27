@@ -21,6 +21,17 @@ employees.forEach(name => {
 });
 
 
+async function loadVotes() {
+
+  const response = await fetch("/api/votes");
+  const data = await response.json();
+
+  votes = data.records || [];
+
+}
+
+
+
 async function loadWorks() {
 
   const response = await fetch("/api/works");
@@ -28,18 +39,12 @@ async function loadWorks() {
 
   works = data.records || [];
 
+
   works.sort((a, b) => {
 
-    const aNote = Array.isArray(a.fields["Примечания"])
-      ? a.fields["Примечания"].join("")
-      : a.fields["Примечания"] || "";
+    const aZalet = String(a.fields["Примечания"] || "").includes("Залетный");
+    const bZalet = String(b.fields["Примечания"] || "").includes("Залетный");
 
-    const bNote = Array.isArray(b.fields["Примечания"])
-      ? b.fields["Примечания"].join("")
-      : b.fields["Примечания"] || "";
-
-    const aZalet = aNote.includes("Залетный");
-    const bZalet = bNote.includes("Залетный");
 
     if (aZalet && !bZalet) return 1;
     if (!aZalet && bZalet) return -1;
@@ -48,9 +53,11 @@ async function loadWorks() {
 
   });
 
+
   renderWorks();
 
 }
+
 
 
 function getVotesForWork(workId) {
@@ -71,6 +78,7 @@ function hasVotedForAuthor(username) {
 
     const work = works.find(item => item.id === workId);
 
+
     return (
       vote.fields["Voter Name"] === employeeSelect.value &&
       work?.fields?.Username === username
@@ -88,6 +96,7 @@ function renderMedia(files) {
 
   if (!file) return "";
 
+
   if (file.type?.startsWith("video")) {
 
     return `
@@ -98,24 +107,10 @@ function renderMedia(files) {
 
   }
 
+
   return `
     <img src="${file.url}" alt="work">
   `;
-
-}
-
-
-
-async function loadWorks() {
-
-  const response = await fetch("/api/works");
-  const data = await response.json();
-
-  works = data.records || [];
-
-renderWorks();
-
-  renderWorks();
 
 }
 
@@ -137,7 +132,9 @@ function renderWorks() {
     ) return;
 
 
+
     const voted = hasVotedForAuthor(fields.Username);
+
 
 
     const card = document.createElement("div");
@@ -199,22 +196,17 @@ document.addEventListener("click", async e => {
   const button = e.target;
 
   const voterName = employeeSelect.value;
-
   const contestWork = button.dataset.work;
+  const author = button.dataset.author;
 
 
   if (!voterName)
     return;
 
 
-  const author = button.dataset.author;
-
-
   const removing = button.classList.contains("remove");
 
 
-
-  // мгновенно меняем интерфейс
 
   if (removing) {
 
@@ -224,6 +216,7 @@ document.addEventListener("click", async e => {
 
       const work = works.find(item => item.id === workId);
 
+
       return !(
         vote.fields["Voter Name"] === voterName &&
         work?.fields?.Username === author
@@ -231,17 +224,19 @@ document.addEventListener("click", async e => {
 
     });
 
+
   } else {
 
     votes.push({
       id: "temp",
-      fields:{
+      fields: {
         "Voter Name": voterName,
-        "Contest Work":[contestWork]
+        "Contest Work": [contestWork]
       }
     });
 
   }
+
 
 
   renderWorks();
@@ -250,13 +245,13 @@ document.addEventListener("click", async e => {
 
   await fetch("/api/vote", {
 
-    method:"POST",
+    method: "POST",
 
-    headers:{
-      "Content-Type":"application/json"
+    headers: {
+      "Content-Type": "application/json"
     },
 
-    body:JSON.stringify({
+    body: JSON.stringify({
 
       voterName,
       contestWork,
@@ -265,10 +260,6 @@ document.addEventListener("click", async e => {
     })
 
   });
-
-
-
-  renderWorks();
 
 
 });
