@@ -209,7 +209,23 @@ document.addEventListener("click", async(e)=>{
     button.textContent = "Голосуем...";
 
   }
+if(existingVote) {
 
+  votes = votes.filter(v => v.id !== existingVote.id);
+
+} else {
+
+  votes.push({
+    id: "temp",
+    fields:{
+      "Voter Name": voterName,
+      "Contest Work":[contestWork]
+    }
+  });
+
+}
+
+renderWorks();
 
   button.disabled = true;
 
