@@ -30,8 +30,8 @@ async function loadWorks() {
 
   works.sort((a, b) => {
 
-    const aZalet = a.fields["Метка"] === "Залетный";
-    const bZalet = b.fields["Метка"] === "Залетный";
+    const aZalet = a.fields["Примечания"] === "Залетный";
+    const bZalet = b.fields["Примечания"] === "Залетный";
 
     if (aZalet && !bZalet) return 1;
     if (!aZalet && bZalet) return -1;
