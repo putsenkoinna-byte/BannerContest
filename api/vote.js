@@ -6,30 +6,63 @@ export default async function handler(req, res) {
   const tableId = "tblbzFEy8wRU63bv1";
 
   if (req.method !== "POST") {
-    return res.status(405).json({error:"Method not allowed"});
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { voterName, contestWork } = req.body;
+  const { voterName, contestWork, action } = req.body;
 
-  const response = await fetch(
-    `https://api.airtable.com/v0/${baseId}/${tableId}`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        fields: {
-          "Voter Name": voterName,
-          "Contest Work": [contestWork],
-          "Date/Time": new Date().toISOString()
+  if (action === "add") {
+
+    const response = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${tableId}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          fields: {
+            "Voter Name": voterName,
+            "Contest Work": [contestWork],
+            "Date/Time": new Date().toISOString()
+          }
+        })
+      }
+    );
+
+    const data = await response.json();
+    return res.status(200).json(data);
+  }
+
+
+  if (action === "delete") {
+
+    const find = await fetch(
+      `https://api.airtable.com/v0/${baseId}/${tableId}?filterByFormula={Voter Name}="${voterName}"`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-      })
+      }
+    );
+
+    const votes = await find.json();
+
+    if (votes.records.length) {
+
+      await fetch(
+        `https://api.airtable.com/v0/${baseId}/${tableId}/${votes.records[0].id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
     }
-  );
 
-  const data = await response.json();
+    return res.status(200).json({success:true});
+  }
 
-  res.status(200).json(data);
 }
