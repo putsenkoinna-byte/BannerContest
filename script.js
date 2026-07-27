@@ -65,7 +65,7 @@ async function loadWorks() {
             ❤️ ${fields["Количество голосов"] || 0} голосов
           </div>
 
-         <button class="vote-button" disabled style="opacity:0.5; cursor:not-allowed;">
+         <button class="vote-button" data-work="${fields.Username}" disabled>
     Голосовать
 </button>
         </div>
@@ -83,3 +83,25 @@ async function loadWorks() {
 
 
 loadWorks();
+document.addEventListener("click", async (e) => {
+  if (!e.target.classList.contains("vote-button")) return;
+
+  const voterName = employeeSelect.value;
+  const contestWork = e.target.dataset.work;
+
+  if (!voterName) return;
+
+  await fetch("/api/vote", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      voterName,
+      contestWork
+    })
+  });
+
+  e.target.textContent = "Голос учтен";
+  e.target.disabled = true;
+});
