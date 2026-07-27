@@ -2,8 +2,7 @@ const employees = [
   "Рома",
   "Вика",
   "Арина",
-  "Карина",
-  "Дара"
+  "Карина"
 ];
 
 const employeeSelect = document.getElementById("employeeSelect");
@@ -45,7 +44,6 @@ async function loadWorks() {
     const aZalet = String(a.fields["Примечания"] || "").includes("Залетный");
     const bZalet = String(b.fields["Примечания"] || "").includes("Залетный");
 
-
     if (aZalet && !bZalet) return 1;
     if (!aZalet && bZalet) return -1;
 
@@ -70,14 +68,13 @@ function getVotesForWork(workId) {
 
 
 
-function hasVotedForAuthor(username) {
+function getAuthorVote(username) {
 
-  return votes.some(vote => {
+  return votes.find(vote => {
 
     const workId = vote.fields["Contest Work"]?.[0];
 
     const work = works.find(item => item.id === workId);
-
 
     return (
       vote.fields["Voter Name"] === employeeSelect.value &&
@@ -85,6 +82,17 @@ function hasVotedForAuthor(username) {
     );
 
   });
+
+}
+
+
+
+function hasCurrentWorkVote(workId) {
+
+  return votes.some(vote =>
+    vote.fields["Voter Name"] === employeeSelect.value &&
+    vote.fields["Contest Work"]?.includes(workId)
+  );
 
 }
 
@@ -133,7 +141,8 @@ function renderWorks() {
 
 
 
-    const voted = hasVotedForAuthor(fields.Username);
+    const authorVote = getAuthorVote(fields.Username);
+    const currentWorkVote = hasCurrentWorkVote(record.id);
 
 
 
@@ -160,12 +169,20 @@ function renderWorks() {
 
 
         <button 
-          class="vote-button ${voted ? "remove" : ""}"
+          class="vote-button ${currentWorkVote ? "remove" : ""}"
           data-work="${record.id}"
           data-author="${fields.Username}"
-          ${employeeSelect.value ? "" : "disabled"}
+          ${employeeSelect.value && !authorVote || currentWorkVote ? "" : "disabled"}
         >
-          ${voted ? "Убрать голос" : "Голосовать"}
+
+          ${
+            currentWorkVote
+              ? "Убрать голос"
+              : authorVote
+                ? "За автора уже отдан голос"
+                : "Голосовать"
+          }
+
         </button>
 
 
@@ -197,7 +214,6 @@ document.addEventListener("click", async e => {
 
   const voterName = employeeSelect.value;
   const contestWork = button.dataset.work;
-  const author = button.dataset.author;
 
 
   if (!voterName)
@@ -207,22 +223,14 @@ document.addEventListener("click", async e => {
   const removing = button.classList.contains("remove");
 
 
-
   if (removing) {
 
-    votes = votes.filter(vote => {
-
-      const workId = vote.fields["Contest Work"]?.[0];
-
-      const work = works.find(item => item.id === workId);
-
-
-      return !(
+    votes = votes.filter(vote =>
+      !(
         vote.fields["Voter Name"] === voterName &&
-        work?.fields?.Username === author
-      );
-
-    });
+        vote.fields["Contest Work"]?.includes(contestWork)
+      )
+    );
 
 
   } else {
@@ -238,9 +246,7 @@ document.addEventListener("click", async e => {
   }
 
 
-
   renderWorks();
-
 
 
   await fetch("/api/vote", {
@@ -252,11 +258,9 @@ document.addEventListener("click", async e => {
     },
 
     body: JSON.stringify({
-
       voterName,
       contestWork,
       action: removing ? "delete" : "add"
-
     })
 
   });
