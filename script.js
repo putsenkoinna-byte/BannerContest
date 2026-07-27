@@ -65,7 +65,7 @@ async function loadWorks() {
             ❤️ ${fields["Количество голосов"] || 0} голосов
           </div>
 
-         <button class="vote-button" data-work="${fields.Username}" disabled>
+         <button class="vote-button" data-work="${record.id}" disabled>
     Голосовать
 </button>
         </div>
