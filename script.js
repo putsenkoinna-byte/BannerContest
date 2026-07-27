@@ -29,23 +29,33 @@ async function loadVotes() {
 }
 
 
-async function loadWorks() {
+function getVotesForWork(workId) {
 
-  const response = await fetch("/api/works");
-  const data = await response.json();
+  return votes.filter(vote =>
+    vote.fields["Contest Work"]?.includes(workId)
+  ).length;
 
-  works = data.records || [];
-
-  renderWorks();
 }
 
 
-function getAuthorVotes(username) {
-  return votes.find(vote =>
-    vote.fields["Voter Name"] === employeeSelect.value &&
-    vote.fields["Username"] === username
-  );
+
+function hasVotedForAuthor(username) {
+
+  return votes.some(vote => {
+
+    const workId = vote.fields["Contest Work"]?.[0];
+
+    const work = works.find(item => item.id === workId);
+
+    return (
+      vote.fields["Voter Name"] === employeeSelect.value &&
+      work?.fields?.Username === username
+    );
+
+  });
+
 }
+
 
 
 function renderMedia(files) {
@@ -54,7 +64,7 @@ function renderMedia(files) {
 
   if (!file) return "";
 
-  if (file.type && file.type.startsWith("video")) {
+  if (file.type?.startsWith("video")) {
 
     return `
       <video controls>
@@ -67,6 +77,20 @@ function renderMedia(files) {
   return `
     <img src="${file.url}" alt="work">
   `;
+
+}
+
+
+
+async function loadWorks() {
+
+  const response = await fetch("/api/works");
+  const data = await response.json();
+
+  works = data.records || [];
+
+  renderWorks();
+
 }
 
 
@@ -80,24 +104,14 @@ function renderWorks() {
 
     const fields = record.fields;
 
+
     if (
       !fields.Username ||
       !fields["Конкурсные работы"]?.length
     ) return;
 
 
-    const authorVote = votes.find(vote => {
-
-  const workId = vote.fields["Contest Work"]?.[0];
-
-  const votedWork = works.find(work => work.id === workId);
-
-  return (
-    vote.fields["Voter Name"] === employeeSelect.value &&
-    votedWork?.fields?.Username === fields.Username
-  );
-
-});
+    const voted = hasVotedForAuthor(fields.Username);
 
 
     const card = document.createElement("div");
@@ -118,23 +132,17 @@ function renderWorks() {
 
 
         <div class="votes">
-          ❤️ ${fields["Количество голосов"] || 0} голосов
+          ❤️ ${getVotesForWork(record.id)} голосов
         </div>
 
 
         <button 
-          class="vote-button ${authorVote ? "remove" : ""}"
+          class="vote-button ${voted ? "remove" : ""}"
           data-work="${record.id}"
           data-author="${fields.Username}"
           ${employeeSelect.value ? "" : "disabled"}
         >
-
-        ${
-          authorVote
-          ? "Убрать голос"
-          : "Голосовать"
-        }
-
+          ${voted ? "Убрать голос" : "Голосовать"}
         </button>
 
 
@@ -151,93 +159,70 @@ function renderWorks() {
 
 
 
-employeeSelect.addEventListener("change", () => {
-
-  renderWorks();
-
-});
+employeeSelect.addEventListener("change", renderWorks);
 
 
 
+document.addEventListener("click", async e => {
 
-document.addEventListener("click", async(e)=>{
 
-
-  if(!e.target.classList.contains("vote-button"))
+  if (!e.target.classList.contains("vote-button"))
     return;
 
 
   const button = e.target;
 
-
   const voterName = employeeSelect.value;
 
   const contestWork = button.dataset.work;
 
-  const author = button.dataset.author;
 
-
-  if(!voterName)
+  if (!voterName)
     return;
 
 
+  const author = button.dataset.author;
 
-  const existingVote = votes.find(vote => {
 
-  const workId = vote.fields["Contest Work"]?.[0];
-
-  const votedWork = works.find(work => work.id === workId);
-
-  return (
-    vote.fields["Voter Name"] === voterName &&
-    votedWork?.fields?.Username === author
-  );
-
-});
+  const removing = button.classList.contains("remove");
 
 
 
-  const oldText = button.textContent;
+  // мгновенно меняем интерфейс
 
+  if (removing) {
 
-  if(existingVote) {
+    votes = votes.filter(vote => {
 
-    button.textContent = "Удаление...";
-    
+      const workId = vote.fields["Contest Work"]?.[0];
+
+      const work = works.find(item => item.id === workId);
+
+      return !(
+        vote.fields["Voter Name"] === voterName &&
+        work?.fields?.Username === author
+      );
+
+    });
+
   } else {
 
-    button.textContent = "Голосуем...";
+    votes.push({
+      id: "temp",
+      fields:{
+        "Voter Name": voterName,
+        "Contest Work":[contestWork]
+      }
+    });
 
   }
-if(existingVote) {
 
-  votes = votes.filter(v => v.id !== existingVote.id);
 
-} else {
-
-  votes.push({
-    id: "temp",
-    fields:{
-      "Voter Name": voterName,
-      "Contest Work":[contestWork]
-    }
-  });
-
-}
-
-renderWorks();
-
-  button.disabled = true;
+  renderWorks();
 
 
 
-  const action = existingVote
-    ? "delete"
-    : "add";
-
-
-
-  const response = await fetch("/api/vote",{
+  await fetch("/api/vote", {
 
     method:"POST",
 
@@ -249,7 +234,7 @@ renderWorks();
 
       voterName,
       contestWork,
-      action
+      action: removing ? "delete" : "add"
 
     })
 
@@ -257,25 +242,12 @@ renderWorks();
 
 
 
-  if(!response.ok){
-
-    button.textContent = oldText;
-    button.disabled = false;
-
-    return;
-
-  }
-
-
-
   await loadVotes();
-
 
   renderWorks();
 
 
 });
-
 
 
 
