@@ -238,7 +238,6 @@ function renderWorks() {
                   class="link-button"
                   href="${fields["Ссылка на пост"]}"
                   target="_blank"
-                  title="Открыть пост"
                 >
                   🔗
                 </a>
@@ -259,9 +258,6 @@ function renderWorks() {
   });
 
 }
-
-
-
 document.addEventListener("click", async e => {
 
 
@@ -325,6 +321,23 @@ document.addEventListener("click", async e => {
   const removing = button.classList.contains("remove");
 
 
+  const playingVideos = [];
+
+  document.querySelectorAll("video").forEach(video => {
+
+    if (!video.paused) {
+
+      playingVideos.push({
+        src: video.currentSrc,
+        time: video.currentTime
+      });
+
+    }
+
+  });
+
+
+
   if (removing) {
 
     votes = votes.filter(vote =>
@@ -348,7 +361,28 @@ document.addEventListener("click", async e => {
   }
 
 
+
   renderWorks();
+
+
+
+  document.querySelectorAll("video").forEach(video => {
+
+    const saved = playingVideos.find(item =>
+      video.currentSrc.includes(item.src)
+    );
+
+
+    if (saved) {
+
+      video.currentTime = saved.time;
+
+      video.play();
+
+    }
+
+  });
+
 
 
   await fetch("/api/vote", {
