@@ -22,7 +22,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         fields: {
           "Voter Name": voterName,
-          "Contest Work": contestWork,
+          "Contest Work": [contestWork],
           "Date/Time": new Date().toISOString()
         }
       })
