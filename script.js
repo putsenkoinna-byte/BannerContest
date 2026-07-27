@@ -22,15 +22,17 @@ async function loadWorks() {
     const response = await fetch("/api/works");
     const data = await response.json();
 
-    worksContainer.innerHTML = "";
+worksContainer.innerHTML = "";
 
-    data.records.forEach(record => {
+const records = data.records || [];
+
+records.forEach(record => {
 
       const fields = record.fields;
 
-      if (!fields.Username || !fields["Конкурсные работы"]) {
-        return;
-      }
+      if (!fields.Username || !fields["Конкурсные работы"] || !fields["Конкурсные работы"].length) {
+  return;
+}
 
       const images = fields["Конкурсные работы"];
 
