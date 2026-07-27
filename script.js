@@ -86,7 +86,18 @@ function renderWorks() {
     ) return;
 
 
-    const authorVote = getAuthorVotes(fields.Username);
+    const authorVote = votes.find(vote => {
+
+  const workId = vote.fields["Contest Work"]?.[0];
+
+  const votedWork = works.find(work => work.id === workId);
+
+  return (
+    vote.fields["Voter Name"] === employeeSelect.value &&
+    votedWork?.fields?.Username === fields.Username
+  );
+
+});
 
 
     const card = document.createElement("div");
