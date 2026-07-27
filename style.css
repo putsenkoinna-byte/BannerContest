@@ -124,12 +124,13 @@ button:disabled {
 }
 
 
-/* Кнопка + ссылка */
+
+/* Кнопка голосования + ссылка */
 
 .button-row {
   display: flex;
   gap: 10px;
-  align-items: stretch;
+  align-items: center;
   width: 100%;
 }
 
@@ -140,10 +141,10 @@ button:disabled {
 }
 
 
+
 .link-button {
-
-  flex: 0 0 50px;
-
+  flex: 0 0 45px;
+  width: 45px;
   height: 45px;
 
   display: flex;
@@ -158,9 +159,13 @@ button:disabled {
 
   text-decoration: none;
 
-  font-size: 20px;
+  font-size: 22px;
+
+  line-height: 1;
 
   box-sizing: border-box;
+
+  overflow: hidden;
 }
 
 
