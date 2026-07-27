@@ -242,10 +242,7 @@ document.addEventListener("click", async e => {
 
 
 
-  setTimeout(async () => {
-  await loadVotes();
   renderWorks();
-}, 1000);
 
 
 });
