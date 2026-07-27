@@ -65,9 +65,9 @@ async function loadWorks() {
             ❤️ ${fields["Количество голосов"] || 0} голосов
           </div>
 
-          <button class="vote-button" disabled>
-            Голосовать
-          </button>
+         <button class="vote-button" disabled style="opacity:0.5; cursor:not-allowed;">
+    Голосовать
+</button>
         </div>
       `;
 
