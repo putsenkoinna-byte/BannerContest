@@ -51,9 +51,9 @@ records.forEach(record => {
             ❤️ ${fields["Количество голосов"] || 0} голосов
           </div>
 
-          <button>
-            Голосовать
-          </button>
+          <button class="vote-button" disabled>
+    Голосовать
+</button>
         </div>
       `;
 
