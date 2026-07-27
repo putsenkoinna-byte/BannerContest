@@ -44,7 +44,7 @@ records.forEach(record => {
 
         <div class="card-content">
           <div class="username">
-            @${fields.Username}
+            ${fields.Username}
           </div>
 
           <div class="votes">
