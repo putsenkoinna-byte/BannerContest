@@ -3,23 +3,9 @@ const employees = [
   "Вика",
   "Арина",
   "Карина",
-  "Дара"
 ];
 
 const employeeSelect = document.getElementById("employeeSelect");
-employeeSelect.addEventListener("change", () => {
-    const buttons = document.querySelectorAll(".vote-button");
-
-    buttons.forEach(button => {
-        button.disabled = employeeSelect.value === "";
-        button.style.opacity = employeeSelect.value === "" ? "0.5" : "1";
-        button.style.cursor = employeeSelect.value === "" ? "not-allowed" : "pointer";
-    });
-});
-    document.querySelectorAll(".vote-button").forEach(button => {
-        button.disabled = !employeeSelect.value;
-    });
-});
 const worksContainer = document.getElementById("works");
 
 employees.forEach(name => {
@@ -30,22 +16,37 @@ employees.forEach(name => {
 });
 
 
+employeeSelect.addEventListener("change", () => {
+  const buttons = document.querySelectorAll(".vote-button");
+
+  buttons.forEach(button => {
+    button.disabled = employeeSelect.value === "";
+    button.style.opacity = employeeSelect.value === "" ? "0.5" : "1";
+    button.style.cursor = employeeSelect.value === "" ? "not-allowed" : "pointer";
+  });
+});
+
+
 async function loadWorks() {
   try {
     const response = await fetch("/api/works");
     const data = await response.json();
 
-worksContainer.innerHTML = "";
+    worksContainer.innerHTML = "";
 
-const records = data.records || [];
+    const records = data.records || [];
 
-records.forEach(record => {
+    records.forEach(record => {
 
       const fields = record.fields;
 
-      if (!fields.Username || !fields["Конкурсные работы"] || !fields["Конкурсные работы"].length) {
-  return;
-}
+      if (
+        !fields.Username ||
+        !fields["Конкурсные работы"] ||
+        !fields["Конкурсные работы"].length
+      ) {
+        return;
+      }
 
       const images = fields["Конкурсные работы"];
 
@@ -64,9 +65,9 @@ records.forEach(record => {
             ❤️ ${fields["Количество голосов"] || 0} голосов
           </div>
 
-          <button class="vote-button" disabled style="opacity:0.5; cursor:not-allowed;">
-    Голосовать
-</button>
+          <button class="vote-button" disabled>
+            Голосовать
+          </button>
         </div>
       `;
 
