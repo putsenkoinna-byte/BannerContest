@@ -21,11 +21,27 @@ employees.forEach(name => {
 });
 
 
-async function loadVotes() {
-  const response = await fetch("/api/votes");
+async function loadWorks() {
+
+  const response = await fetch("/api/works");
   const data = await response.json();
 
-  votes = data.records || [];
+  works = data.records || [];
+
+  works.sort((a, b) => {
+
+    const aZalet = a.fields["Метка"] === "Залетный";
+    const bZalet = b.fields["Метка"] === "Залетный";
+
+    if (aZalet && !bZalet) return 1;
+    if (!aZalet && bZalet) return -1;
+
+    return 0;
+
+  });
+
+  renderWorks();
+
 }
 
 
