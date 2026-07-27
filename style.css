@@ -96,3 +96,9 @@ button:hover {
 button.remove {
   background: #334155;
 }
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #555;
+}
