@@ -211,22 +211,42 @@ function renderWorks() {
         </div>
 
 
-        <button 
-          class="vote-button ${currentWorkVote ? "remove" : ""}"
-          data-work="${record.id}"
-          data-author="${fields.Username}"
-          ${employeeSelect.value && !authorVote || currentWorkVote ? "" : "disabled"}
-        >
+        <div class="button-row">
 
-        ${
-          currentWorkVote
-            ? "Убрать голос"
-            : authorVote
-              ? "За автора уже отдан голос"
-              : "Голосовать"
-        }
+          <button 
+            class="vote-button ${currentWorkVote ? "remove" : ""}"
+            data-work="${record.id}"
+            data-author="${fields.Username}"
+            ${employeeSelect.value && !authorVote || currentWorkVote ? "" : "disabled"}
+          >
 
-        </button>
+          ${
+            currentWorkVote
+              ? "Убрать голос"
+              : authorVote
+                ? "За автора уже отдан голос"
+                : "Голосовать"
+          }
+
+          </button>
+
+
+          ${
+            fields["Ссылка на пост"]
+              ? `
+                <a 
+                  class="link-button"
+                  href="${fields["Ссылка на пост"]}"
+                  target="_blank"
+                  title="Открыть пост"
+                >
+                  🔗
+                </a>
+              `
+              : ""
+          }
+
+        </div>
 
 
       </div>
@@ -303,7 +323,6 @@ document.addEventListener("click", async e => {
 
 
   const removing = button.classList.contains("remove");
-
 
 
   if (removing) {
