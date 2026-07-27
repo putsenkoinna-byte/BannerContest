@@ -7,6 +7,11 @@ const employees = [
 ];
 
 const employeeSelect = document.getElementById("employeeSelect");
+employeeSelect.addEventListener("change", () => {
+    document.querySelectorAll(".vote-button").forEach(button => {
+        button.disabled = !employeeSelect.value;
+    });
+});
 const worksContainer = document.getElementById("works");
 
 employees.forEach(name => {
