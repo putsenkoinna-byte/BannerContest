@@ -107,7 +107,6 @@ function renderMedia(files) {
 
     const file = files[0];
 
-
     if (file.type?.startsWith("video")) {
 
       return `
@@ -117,7 +116,6 @@ function renderMedia(files) {
       `;
 
     }
-
 
     return `
       <img src="${file.url}" alt="work">
@@ -129,7 +127,7 @@ function renderMedia(files) {
   return `
     <div class="slider">
 
-      <button class="slider-prev">‹</button>
+      <button type="button" class="slider-prev">‹</button>
 
       <div class="slider-items">
 
@@ -150,7 +148,7 @@ function renderMedia(files) {
 
 
           return `
-            <img 
+            <img
               class="slider-item ${index === 0 ? "active" : ""}"
               src="${file.url}"
               alt="work"
@@ -162,7 +160,7 @@ function renderMedia(files) {
       </div>
 
 
-      <button class="slider-next">›</button>
+      <button type="button" class="slider-next">›</button>
 
     </div>
   `;
@@ -187,10 +185,8 @@ function renderWorks() {
     ) return;
 
 
-
     const authorVote = getAuthorVote(fields.Username);
     const currentWorkVote = hasCurrentWorkVote(record.id);
-
 
 
     const card = document.createElement("div");
@@ -222,13 +218,13 @@ function renderWorks() {
           ${employeeSelect.value && !authorVote || currentWorkVote ? "" : "disabled"}
         >
 
-          ${
-            currentWorkVote
-              ? "Убрать голос"
-              : authorVote
-                ? "За автора уже отдан голос"
-                : "Голосовать"
-          }
+        ${
+          currentWorkVote
+            ? "Убрать голос"
+            : authorVote
+              ? "За автора уже отдан голос"
+              : "Голосовать"
+        }
 
         </button>
 
@@ -246,59 +242,54 @@ function renderWorks() {
 
 
 
-document.addEventListener("click", e => {
-
-  if (
-    !e.target.classList.contains("slider-prev") &&
-    !e.target.classList.contains("slider-next")
-  ) return;
+document.addEventListener("click", async e => {
 
 
-  const slider = e.target.closest(".slider");
-
-  const items = slider.querySelectorAll(".slider-item");
-
-
-  let current = [...items].findIndex(item =>
-    item.classList.contains("active")
-  );
+  if (e.target.classList.contains("slider-next") ||
+      e.target.classList.contains("slider-prev")) {
 
 
-  items[current].classList.remove("active");
+    const slider = e.target.closest(".slider");
+
+    const items = slider.querySelectorAll(".slider-item");
 
 
-  if (e.target.classList.contains("slider-next")) {
+    let current = [...items].findIndex(item =>
+      item.classList.contains("active")
+    );
 
-    current++;
 
-    if (current >= items.length)
-      current = 0;
+    items[current].classList.remove("active");
 
-  } else {
 
-    current--;
+    if (e.target.classList.contains("slider-next")) {
 
-    if (current < 0)
-      current = items.length - 1;
+      current++;
+
+      if (current >= items.length)
+        current = 0;
+
+    } else {
+
+      current--;
+
+      if (current < 0)
+        current = items.length - 1;
+
+    }
+
+
+    items[current].classList.add("active");
+
+    return;
 
   }
 
 
-  items[current].classList.add("active");
-
-});
-
-
-
-employeeSelect.addEventListener("change", renderWorks);
-
-
-
-document.addEventListener("click", async e => {
-
 
   if (!e.target.classList.contains("vote-button"))
     return;
+
 
 
   const button = e.target;
@@ -312,6 +303,7 @@ document.addEventListener("click", async e => {
 
 
   const removing = button.classList.contains("remove");
+
 
 
   if (removing) {
@@ -358,6 +350,10 @@ document.addEventListener("click", async e => {
 
 
 });
+
+
+
+employeeSelect.addEventListener("change", renderWorks);
 
 
 
