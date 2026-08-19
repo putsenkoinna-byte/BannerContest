@@ -2,7 +2,7 @@ const employees = [
   "Рома",
   "Вика",
   "Арина",
-  "Карина"
+  "Карина",
   "Ирина"
 ];
 
@@ -15,8 +15,10 @@ let works = [];
 
 employees.forEach(name => {
   const option = document.createElement("option");
+
   option.value = name;
   option.textContent = name;
+
   employeeSelect.appendChild(option);
 });
 
@@ -31,7 +33,6 @@ async function loadVotes() {
 }
 
 
-
 async function loadWorks() {
 
   const response = await fetch("/api/works");
@@ -40,14 +41,20 @@ async function loadWorks() {
   works = data.records || [];
 
 
-  works.sort((a,b)=>{
+  works.sort((a, b) => {
 
-    const aZalet = String(a.fields["Примечания"] || "").toLowerCase().includes("залетный");
-    const bZalet = String(b.fields["Примечания"] || "").toLowerCase().includes("залетный");
+    const aZalet = String(
+      a.fields["Примечания"] || ""
+    ).toLowerCase().includes("залетный");
+
+    const bZalet = String(
+      b.fields["Примечания"] || ""
+    ).toLowerCase().includes("залетный");
 
 
-    if(aZalet && !bZalet) return 1;
-    if(!aZalet && bZalet) return -1;
+    if (aZalet && !bZalet) return 1;
+
+    if (!aZalet && bZalet) return -1;
 
     return 0;
 
@@ -59,8 +66,7 @@ async function loadWorks() {
 }
 
 
-
-function getVotesForWork(workId){
+function getVotesForWork(workId) {
 
   return votes.filter(vote =>
     vote.fields["Contest Work"]?.includes(workId)
@@ -69,8 +75,7 @@ function getVotesForWork(workId){
 }
 
 
-
-function getEmployeeVotes(){
+function getEmployeeVotes() {
 
   return votes.filter(vote =>
     vote.fields["Voter Name"] === employeeSelect.value
@@ -79,14 +84,15 @@ function getEmployeeVotes(){
 }
 
 
+function getAuthorVote(username) {
 
-function getAuthorVote(username){
-
-  return votes.find(vote=>{
+  return votes.find(vote => {
 
     const workId = vote.fields["Contest Work"]?.[0];
 
-    const work = works.find(item=>item.id===workId);
+    const work = works.find(item =>
+      item.id === workId
+    );
 
 
     return (
@@ -99,8 +105,7 @@ function getAuthorVote(username){
 }
 
 
-
-function hasCurrentWorkVote(workId){
+function hasCurrentWorkVote(workId) {
 
   return votes.some(vote =>
     vote.fields["Voter Name"] === employeeSelect.value &&
@@ -110,19 +115,19 @@ function hasCurrentWorkVote(workId){
 }
 
 
+function renderMedia(files) {
 
-function renderMedia(files){
-
-  if(!files || !files.length)
+  if (!files || !files.length) {
     return "";
+  }
 
 
-  if(files.length===1){
+  if (files.length === 1) {
 
     const file = files[0];
 
 
-    if(file.type?.startsWith("video")){
+    if (file.type?.startsWith("video")) {
 
       return `
         <video controls>
@@ -134,52 +139,65 @@ function renderMedia(files){
 
 
     return `
-      <img src="${file.url}">
+      <img src="${file.url}" alt="work">
     `;
 
   }
 
 
-
   return `
     <div class="slider">
 
-      <button type="button" class="slider-prev">‹</button>
+      <button
+        type="button"
+        class="slider-prev"
+      >
+        ‹
+      </button>
+
 
       <div class="slider-items">
 
-      ${
-        files.map((file,index)=>{
+        ${
+          files.map((file, index) => {
 
-          if(file.type?.startsWith("video")){
+            if (file.type?.startsWith("video")) {
+
+              return `
+                <video
+                  class="slider-item ${index === 0 ? "active" : ""}"
+                  controls
+                >
+                  <source
+                    src="${file.url}"
+                    type="${file.type}"
+                  >
+                </video>
+              `;
+
+            }
+
 
             return `
-              <video
-                class="slider-item ${index===0?"active":""}"
-                controls>
-
-                <source src="${file.url}" type="${file.type}">
-
-              </video>
+              <img
+                class="slider-item ${index === 0 ? "active" : ""}"
+                src="${file.url}"
+                alt="work"
+              >
             `;
 
-          }
-
-
-          return `
-            <img
-              class="slider-item ${index===0?"active":""}"
-              src="${file.url}">
-          `;
-
-
-        }).join("")
-      }
+          }).join("")
+        }
 
       </div>
 
 
-      <button type="button" class="slider-next">›</button>
+      <button
+        type="button"
+        class="slider-next"
+      >
+        ›
+      </button>
 
     </div>
   `;
@@ -187,44 +205,44 @@ function renderMedia(files){
 }
 
 
+function renderWorks() {
 
-function renderWorks(){
-
-  worksContainer.innerHTML="";
+  worksContainer.innerHTML = "";
 
 
-  works.forEach(record=>{
-
+  works.forEach(record => {
 
     const fields = record.fields;
 
 
-    if(
+    if (
       !fields.Username ||
       !fields["Конкурсные работы"]?.length
-    )
+    ) {
       return;
+    }
 
 
+    const authorVote = getAuthorVote(
+      fields.Username
+    );
 
-    const authorVote = getAuthorVote(fields.Username);
-
-    const currentWorkVote = hasCurrentWorkVote(record.id);
-
+    const currentWorkVote = hasCurrentWorkVote(
+      record.id
+    );
 
 
     const card = document.createElement("div");
 
-    card.className="card";
+    card.className = "card";
 
 
-    card.innerHTML=`
+    card.innerHTML = `
 
       ${renderMedia(fields["Конкурсные работы"])}
 
 
       <div class="card-content">
-
 
         <div class="username">
           ${fields.Username}
@@ -238,19 +256,24 @@ function renderWorks(){
 
         <div class="button-row">
 
-
           <button
-            class="vote-button ${currentWorkVote?"remove":""}"
+            class="vote-button ${currentWorkVote ? "remove" : ""}"
             data-work="${record.id}"
             data-author="${fields.Username}"
-            ${employeeSelect.value && (!authorVote || currentWorkVote) ? "" : "disabled"}>
+            ${
+              employeeSelect.value &&
+              (!authorVote || currentWorkVote)
+                ? ""
+                : "disabled"
+            }
+          >
 
             ${
               currentWorkVote
-              ? "Убрать голос"
-              : authorVote
-                ? "За автора уже отдан голос"
-                : "Голосовать"
+                ? "Убрать голос"
+                : authorVote
+                  ? "За автора уже отдан голос"
+                  : "Голосовать"
             }
 
           </button>
@@ -258,26 +281,21 @@ function renderWorks(){
 
           ${
             fields["Ссылка на пост"]
-            ?
-            `
-            <a 
-  class="link-button"
-  href="${fields["Ссылка на пост"]}"
-  target="_blank"
-  title="Открыть пост"
->
-  🔗
-</a>
-
-            </a>
-            `
-            :
-            ""
+              ? `
+                <a
+                  class="link-button"
+                  href="${fields["Ссылка на пост"]}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Открыть пост"
+                >
+                  🔗
+                </a>
+              `
+              : ""
           }
 
-
         </div>
-
 
       </div>
 
@@ -286,22 +304,23 @@ function renderWorks(){
 
     worksContainer.appendChild(card);
 
-
   });
 
-
 }
+
+
 document.addEventListener("click", async e => {
 
-
-  if(
+  if (
     e.target.classList.contains("slider-next") ||
     e.target.classList.contains("slider-prev")
-  ){
+  ) {
 
     const slider = e.target.closest(".slider");
 
-    const items = slider.querySelectorAll(".slider-item");
+    const items = slider.querySelectorAll(
+      ".slider-item"
+    );
 
 
     let current = [...items].findIndex(item =>
@@ -312,20 +331,23 @@ document.addEventListener("click", async e => {
     items[current].classList.remove("active");
 
 
-    if(e.target.classList.contains("slider-next")){
+    if (
+      e.target.classList.contains("slider-next")
+    ) {
 
       current++;
 
-      if(current >= items.length)
+      if (current >= items.length) {
         current = 0;
+      }
 
-    }
-    else{
+    } else {
 
       current--;
 
-      if(current < 0)
+      if (current < 0) {
         current = items.length - 1;
+      }
 
     }
 
@@ -337,10 +359,9 @@ document.addEventListener("click", async e => {
   }
 
 
-
-  if(!e.target.classList.contains("vote-button"))
+  if (!e.target.classList.contains("vote-button")) {
     return;
-
+  }
 
 
   const button = e.target;
@@ -350,96 +371,67 @@ document.addEventListener("click", async e => {
   const contestWork = button.dataset.work;
 
 
-
-  if(!voterName)
+  if (!voterName) {
     return;
+  }
 
 
+  const removing =
+    button.classList.contains("remove");
 
-  const removing = button.classList.contains("remove");
 
-
-
-  if(!removing){
-
+  if (!removing) {
 
     const userVotes = getEmployeeVotes();
 
 
-    if(userVotes >= 10){
+    if (userVotes >= 10) {
 
-      alert("Вы уже использовали все 10 голосов");
+      alert(
+        "Вы уже использовали все 10 голосов"
+      );
 
       return;
-
     }
 
   }
 
 
-
-  if(removing){
-
+  if (removing) {
 
     votes = votes.filter(vote =>
       !(
         vote.fields["Voter Name"] === voterName &&
-        vote.fields["Contest Work"]?.includes(contestWork)
+        vote.fields["Contest Work"]?.includes(
+          contestWork
+        )
       )
     );
 
-
-    button.classList.remove("remove");
-
-    button.textContent="Голосовать";
-
-
-  }
-  else{
-
+  } else {
 
     votes.push({
 
-      id:"temp",
+      id: "temp",
 
-      fields:{
-
-        "Voter Name":voterName,
-
-        "Contest Work":[contestWork]
-
+      fields: {
+        "Voter Name": voterName,
+        "Contest Work": [contestWork]
       }
 
     });
 
-
-    button.classList.add("remove");
-
-    button.textContent="Убрать голос";
-
-
   }
 
 
-
-  const votesBlock = button
-    .closest(".card")
-    .querySelector(".votes");
+  renderWorks();
 
 
-  if(votesBlock){
-
-    votesBlock.textContent =
-      `❤️ ${getVotesForWork(contestWork)} голосов`;
-
-  }
+  const counter =
+    document.getElementById("votesLeft");
 
 
-
-  const counter = document.getElementById("votesLeft");
-
-
-  if(counter){
+  if (counter) {
 
     counter.textContent =
       `Ваши голоса: ${getEmployeeVotes()}/10`;
@@ -447,59 +439,54 @@ document.addEventListener("click", async e => {
   }
 
 
+  await fetch("/api/vote", {
 
-  await fetch("/api/vote",{
+    method: "POST",
 
-
-    method:"POST",
-
-
-    headers:{
-
-      "Content-Type":"application/json"
-
+    headers: {
+      "Content-Type": "application/json"
     },
 
-
-    body:JSON.stringify({
+    body: JSON.stringify({
 
       voterName,
 
       contestWork,
 
-      action: removing ? "delete" : "add"
+      action: removing
+        ? "delete"
+        : "add"
 
     })
 
-
   });
 
-
-
 });
 
 
+employeeSelect.addEventListener(
+  "change",
+  () => {
 
-employeeSelect.addEventListener("change", ()=>{
-
-  renderWorks();
-
-
-  const counter = document.getElementById("votesLeft");
+    renderWorks();
 
 
-  if(counter){
+    const counter =
+      document.getElementById("votesLeft");
 
-    counter.textContent =
-      `Ваши голоса: ${getEmployeeVotes()}/10`;
+
+    if (counter) {
+
+      counter.textContent =
+        `Ваши голоса: ${getEmployeeVotes()}/10`;
+
+    }
 
   }
-
-});
-
+);
 
 
-(async()=>{
+(async () => {
 
   await loadVotes();
 
