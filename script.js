@@ -3,6 +3,7 @@ const employees = [
   "Вика",
   "Арина",
   "Карина"
+  "Ирина"
 ];
 
 const employeeSelect = document.getElementById("employeeSelect");
