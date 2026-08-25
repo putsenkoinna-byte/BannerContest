@@ -114,6 +114,7 @@ function renderWorks() {
     const fields = record.fields;
     if (!fields.Username || !fields["Конкурсные работы"]?.length) return;
 
+    const rawUsername = String(fields.Username).replace(/^@+/, '');
     const authorVote = getAuthorVote(fields.Username);
     const currentWorkVote = hasCurrentWorkVote(record.id);
     const workDescription = fields["Описание"] || fields["Текст"] || fields["Заметка"] || "";
@@ -126,7 +127,7 @@ function renderWorks() {
       
       <div class="card-content">
         <div class="card-header">
-          <div class="username">@${fields.Username}</div>
+          <div class="username">@${rawUsername}</div>
           <div class="votes-badge">❤️ ${getVotesForWork(record.id)}</div>
         </div>
 
@@ -159,11 +160,14 @@ function renderWorks() {
 }
 
 function showWinnersModal() {
-  const stats = works.map(w => ({
-    id: w.id,
-    author: w.fields.Username || "Аноним",
-    votes: getVotesForWork(w.id)
-  }));
+  const stats = works.map(w => {
+    const cleanUser = String(w.fields.Username || "Аноним").replace(/^@+/, '');
+    return {
+      id: w.id,
+      author: cleanUser,
+      votes: getVotesForWork(w.id)
+    };
+  });
 
   stats.sort((a, b) => b.votes - a.votes);
   const top10 = stats.slice(0, 10);
@@ -171,17 +175,10 @@ function showWinnersModal() {
   winnersList.innerHTML = "";
 
   top10.forEach((item, index) => {
-    let rankBadge = `${index + 1}`;
-    let rankClass = "";
-
-    if (index === 0) { rankBadge = "🥇"; rankClass = "top-1"; }
-    else if (index === 1) { rankBadge = "🥈"; rankClass = "top-2"; }
-    else if (index === 2) { rankBadge = "🥉"; rankClass = "top-3"; }
-
     const el = document.createElement("div");
-    el.className = `winner-item ${rankClass}`;
+    el.className = "winner-item";
     el.innerHTML = `
-      <div class="winner-rank">${rankBadge}</div>
+      <div class="winner-rank">${index + 1}</div>
       <div class="winner-name">@${item.author}</div>
       <div class="winner-count">❤️ ${item.votes}</div>
     `;
