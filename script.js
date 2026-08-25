@@ -61,7 +61,8 @@ function showToast(text) {
 
 async function loadVotes() {
   try {
-    const response = await fetch("/api/votes");
+    // Добавляем параметр времени, чтобы браузер и Vercel не кешировали ответ Airtable
+    const response = await fetch(`/api/votes?_t=${Date.now()}`);
     const data = await response.json();
     votes = data.records || [];
   } catch (err) {
@@ -71,7 +72,7 @@ async function loadVotes() {
 
 async function loadWorks() {
   try {
-    const response = await fetch("/api/works");
+    const response = await fetch(`/api/works?_t=${Date.now()}`);
     const data = await response.json();
     works = data.records || [];
 
@@ -501,7 +502,7 @@ document.addEventListener("click", async e => {
     setTimeout(() => { voteAnimBadge.className = "vote-anim-badge"; }, 800);
   }
 
-  // Оптимистичное обновление интерфейса для мгновенного отклика
+  // Оптимистичное локальное обновление для мгновенного отклика
   if (removing) {
     votes = votes.filter(vote =>
       !(vote.fields["Voter Name"] === voterName && vote.fields["Contest Work"]?.includes(contestWork))
@@ -523,7 +524,7 @@ document.addEventListener("click", async e => {
     setTimeout(handleCompletionModal, 300);
   }
 
-  // Отправка на сервер и полная синхронизация с таблицей
+  // Отправка запроса в Airtable через бэкенд
   try {
     await fetch("/api/vote", {
       method: "POST",
@@ -535,9 +536,12 @@ document.addEventListener("click", async e => {
       })
     });
     
-    // Подтягиваем точные данные из базы данных, чтобы всё совпадало на 100%
-    await loadVotes();
-    updateUIAfterVote();
+    // Даем Airtable 400 мс на запись и пересчет формул, затем запрашиваем свежие данные
+    setTimeout(async () => {
+      await loadVotes();
+      updateUIAfterVote();
+    }, 400);
+
   } catch (err) {
     console.error("Ошибка сохранения голоса:", err);
   }
