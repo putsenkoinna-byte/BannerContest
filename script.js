@@ -34,7 +34,7 @@ const waitCardBox = document.getElementById("waitCardBox");
 const waitTitle = document.getElementById("waitTitle");
 const waitText = document.getElementById("waitText");
 
-let clickStage = 0; // 0: Start, 1: Healed, 2: Barbie, 3: UNO Stack
+let clickStage = 0; // 0: Start (Hate -> Heal), 1: Healed, 2: Barbie, 3: UNO Stack
 let subClickCount = 0;
 
 let votes = [];
@@ -206,7 +206,9 @@ function handleCompletionModal() {
     if (ronaldoGrid) {
       ronaldoGrid.style.display = "none";
       const cards = ronaldoGrid.querySelectorAll(".uno-card");
-      cards.forEach(c => c.classList.remove("swapped"));
+      cards.forEach((c, idx) => {
+        c.className = `uno-card pos-${idx}`;
+      });
     }
     if (waitTitle) waitTitle.textContent = "Твой голос учтен!";
     if (waitText) {
@@ -225,12 +227,12 @@ function handleCompletionModal() {
   }
 }
 
-// ИНТЕРАКТИВНЫЙ МИНИ-СЮЖЕТ
+// ИНТЕРАКТИВНЫЙ МИНИ-СЮЖЕТ (Хейт -> Хил -> Барби -> Взрыв -> Стопка УНО)
 if (healImgBox) {
   healImgBox.addEventListener("click", () => {
     subClickCount++;
 
-    // СТАДИЯ 1: Первые 3 клика — волшебный захилл по пивку
+    // СТАДИЯ 0: Первые 3 клика — волшебный захилл
     if (clickStage === 0 && subClickCount >= 3) {
       clickStage = 1;
       subClickCount = 0;
@@ -255,7 +257,7 @@ if (healImgBox) {
       return;
     }
 
-    // СТАДИЯ 2: Повторные клики после заживления — Барби с гранатой
+    // СТАДИЯ 1: Следующие 3 клика после заживления — Барби с гранатой
     if (clickStage === 1 && subClickCount >= 3) {
       clickStage = 2;
       subClickCount = 0;
@@ -274,18 +276,25 @@ if (healImgBox) {
   });
 }
 
-// Клик по стопке карт (перемещение верхней карты в конец стопки в стиле UNO)
+// Клик по стопке карт (плавное циклическое перелистывание позиций классов)
 if (ronaldoGrid) {
   ronaldoGrid.addEventListener("click", () => {
     if (clickStage === 3) {
-      const cards = ronaldoGrid.querySelectorAll(".uno-card");
-      if (cards.length > 0) {
-        // Переносим первую карточку в конец контейнера, сбрасывая класс анимации
-        cards[0].classList.add("swapped");
+      const cards = Array.from(ronaldoGrid.querySelectorAll(".uno-card"));
+      const topCard = cards.find(c => c.classList.contains("pos-0"));
+
+      if (topCard) {
+        topCard.classList.add("swapping");
+
         setTimeout(() => {
-          cards[0].classList.remove("swapped");
-          ronaldoGrid.appendChild(cards[0]);
-        }, 300);
+          cards.forEach(c => {
+            let currentPos = parseInt(c.dataset.pos);
+            let newPos = (currentPos - 1 + cards.length) % cards.length;
+            c.dataset.pos = newPos;
+            c.className = `uno-card pos-${newPos}`;
+          });
+          topCard.classList.remove("swapping");
+        }, 200);
       }
     }
   });
@@ -301,7 +310,7 @@ function triggerExplosionAndUNO() {
     if (healHintBox) healHintBox.style.display = "none";
 
     if (waitTitle) waitTitle.textContent = "Сила ИИндии теперь с тобой!";
-    if (waitText) waitText.style.display = "none"; // Убираем вторую строку совсем
+    if (waitText) waitText.style.display = "none"; // Убираем вторую строку
 
     if (ronaldoGrid) ronaldoGrid.style.display = "block";
   }, 700);
