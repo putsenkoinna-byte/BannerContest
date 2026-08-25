@@ -430,7 +430,7 @@ function createHeartsEffect() {
   }
 }
 
-// ТОТ САМЫЙ ЭТАЛОННЫЙ ПОП-АП (БЕЗ СЕРДЕЧЕК, ТОЛЬКО НИК И КНОПКА ССЫЛКИ КАК НА СКРИНЕ)
+// ИДЕАЛЬНЫЙ ПОП-АП ПОБЕДИТЕЛЕЙ (БЕЗ СЕРДЕЧЕК И БЕЗ ЦИФР ГОЛОСОВ)
 window.showWinnersModal = function() {
   const top10 = [
     { author: "BladeTag", postLink: "https://t.me/qq1win/5273481" },
@@ -618,15 +618,6 @@ if (modalClose) {
 if (modalOverlay) {
   modalOverlay.addEventListener("click", (e) => {
     if (e.target === modalOverlay) modalOverlay.classList.remove("active");
-  });
-}
-
-if (waitModalClose) {
-  waitModalClose.addEventListener("click", () => waitModalOverlay.classList.remove("active"));
-}
-if (waitModalOverlay) {
-  waitModalOverlay.addEventListener("click", (e) => {
-    if (e.target === waitModalOverlay) waitModalOverlay.classList.remove("active");
   });
 }
 
