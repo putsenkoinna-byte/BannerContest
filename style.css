@@ -238,7 +238,7 @@ select {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ФИНАЛЬНЫЙ ЖЕСТКИЙ ФИКС ПОП-АПА, ЗАТЕМНЕНИЯ И КУБКА */
+/* ИДЕАЛЬНЫЙ ПОП-АП (КАК НА ЭТАЛОНЕ: ПО ЦЕНТРУ, С ОТСТУПАМИ И ТАК ЖЕ СМОТРИТСЯ НА ТЕЛЕФОНЕ) */
 .modal-overlay {
   position: fixed !important;
   top: 0 !important;
@@ -253,10 +253,10 @@ select {
   pointer-events: none;
   transition: opacity 0.3s ease;
   z-index: 99999 !important;
-  padding: 16px !important;
+  padding: 20px !important;
   box-sizing: border-box !important;
   overflow-y: auto !important;
-  backdrop-filter: blur(5px);
+  backdrop-filter: blur(6px);
 }
 
 .modal-overlay.active {
@@ -268,10 +268,10 @@ select {
   background-color: #161822 !important;
   border: 1px solid #2e3248 !important;
   border-radius: 24px !important;
-  padding: 32px 24px !important;
+  padding: 36px 24px 28px 24px !important;
   width: 100% !important;
   max-width: 520px !important;
-  max-height: 90vh !important;
+  max-height: 85vh !important;
   overflow-y: auto !important;
   box-sizing: border-box !important;
   position: relative !important;
@@ -280,17 +280,54 @@ select {
   text-align: center !important;
 }
 
-/* СЖИМАЕМ ЭТОТ ЕБУЧИЙ КУБОК ВНУТРИ ПОП-АПА ДО 64 ПИКСЕЛЕЙ */
+/* Скроллбар внутри модалки для телефонов */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-content::-webkit-scrollbar-thumb {
+  background: #2e3248;
+  border-radius: 3px;
+}
+
+/* Крестик закрытия строго в правом верхнем углу карточки */
+.modal-content button.close-btn,
+.modal-content .close,
+#modalClose {
+  position: absolute !important;
+  top: 16px !important;
+  right: 16px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  border: none !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 16px !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  transition: background 0.2s !important;
+}
+
+.modal-content button.close-btn:hover,
+.modal-content .close:hover,
+#modalClose:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Нормальный размер кубка внутри карточки */
 .modal-content img,
-.modal-overlay img,
+.modal-overlay img:not(.card img),
 .modal-content svg,
 .modal-overlay svg {
-  width: 64px !important;
-  height: 64px !important;
-  max-width: 64px !important;
-  max-height: 64px !important;
-  min-width: 64px !important;
-  min-height: 64px !important;
+  width: 80px !important;
+  height: 80px !important;
+  max-width: 80px !important;
+  max-height: 80px !important;
+  min-width: 80px !important;
+  min-height: 80px !important;
   margin: 0 auto 16px auto !important;
   display: block !important;
   object-fit: contain !important;
