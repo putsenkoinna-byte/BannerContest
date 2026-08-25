@@ -15,7 +15,7 @@
   <div class="logo-group">
     <div class="brand-badge">1win</div>
     <div>
-      <h1>1win Community </h1>
+      <h1>1win Community 🤘</h1>
       <div class="subtitle">Конкурс стикеров & медиа в чате</div>
     </div>
   </div>
@@ -35,6 +35,13 @@
   <section id="works" class="works-grid"></section>
 </main>
 
+<!-- Плавающий счетчик (Осталось голосов) -->
+<div id="stickyCounter" class="sticky-counter">
+  <span id="stickyCounterText">Осталось голосов: 10</span>
+  <span id="voteAnimBadge" class="vote-anim-badge"></span>
+</div>
+
+<!-- Поп-ап 1: Победители -->
 <div id="modalOverlay" class="modal-overlay">
   <div class="modal-card">
     <button type="button" class="modal-close" id="modalClose">&times;</button>
@@ -50,6 +57,26 @@
     <div id="winnersList" class="winners-list"></div>
   </div>
 </div>
+
+<!-- Поп-ап 2: Промежуточный мемный -->
+<div id="waitModalOverlay" class="modal-overlay">
+  <div class="modal-card wait-card">
+    <button type="button" class="modal-close" id="waitModalClose">&times;</button>
+    <div class="wait-content">
+      <div class="wait-img-wrapper">
+        <img src="hate.jpg" alt="Meme" class="wait-img">
+      </div>
+      <h2 class="wait-title">Ваш голос учтен!</h2>
+      <p class="wait-text">
+        Чья-то нервная система уже готовится к хейту в чате.<br>
+        Да прибудет с вами сила 🫡
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Уведомление о копировании -->
+<div id="toast" class="toast">Скопировано!</div>
 
 <script src="script.js"></script>
 </body>
