@@ -181,7 +181,7 @@ select {
 .slider-prev { left: 10px; }
 .slider-next { right: 10px; }
 
-/* Стикеры, счетчики и бабблы */
+/* Счетчики и бабблы */
 .sticky-counter {
   position: fixed;
   bottom: 16px;
@@ -220,21 +220,24 @@ select {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Модальные окна / Поп-апы */
+/* Модальные окна и Поп-ап победителей */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
   z-index: 999;
+  padding: 20px 10px;
+  box-sizing: border-box;
 }
 
 .modal-overlay.active {
@@ -246,13 +249,20 @@ select {
   background-color: #161822;
   border: 1px solid #2e3248;
   border-radius: 20px;
-  padding: 24px;
-  width: 90%;
-  max-width: 480px;
+  padding: 20px 16px;
+  width: 100%;
+  max-width: 420px;
+  margin: 30px auto;
   box-sizing: border-box;
-  max-height: 85vh;
-  overflow-y: auto;
   position: relative;
+}
+
+/* Фикс кубка, чтобы не был гигантским */
+.modal-content img:not(.winner-item img) {
+  max-height: 70px !important;
+  width: auto !important;
+  margin: 0 auto 10px auto !important;
+  display: block !important;
 }
 
 /* Элементы списка победителей */
@@ -261,35 +271,56 @@ select {
   align-items: center;
   justify-content: space-between;
   background: #1f2233;
-  padding: 10px 14px;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  gap: 8px;
 }
 
 .winner-rank {
   font-weight: bold;
-  font-size: 16px;
+  font-size: 14px;
   color: #818cf8;
-  min-width: 24px;
+  min-width: 20px;
+  text-align: center;
 }
 
-.copy-user-btn, .copy-post-btn {
+.copy-user-btn {
+  flex: 1;
+  text-align: left;
+  background: transparent;
+  color: #ffffff;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-user-btn:hover {
+  color: #818cf8;
+}
+
+.copy-post-btn {
   background-color: #2e3248;
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  white-space: pointer;
   transition: background 0.2s;
 }
 
-.copy-user-btn:hover, .copy-post-btn:hover {
+.copy-post-btn:hover {
   background-color: #4f46e5;
 }
 
-/* Анимации кликов по мемам и встряски */
+/* Анимация кликов по мемам и встряски */
 @keyframes clickShake {
   0% { transform: scale(1) rotate(0deg); }
   25% { transform: scale(0.95) rotate(-3deg); }
@@ -302,20 +333,28 @@ select {
   animation: clickShake 0.3s ease-in-out;
 }
 
-/* Мобильная адаптация поп-апа победителей */
+/* Мобильная адаптация */
 @media (max-width: 600px) {
-  .modal-content {
-    width: 95% !important;
-    padding: 16px 10px !important;
+  .modal-overlay {
+    padding: 10px 4px;
   }
   
-  .winner-item {
-    padding: 8px 10px !important;
-    font-size: 13px !important;
+  .modal-content {
+    margin: 15px auto;
+    padding: 14px 10px;
   }
 
-  .copy-user-btn, .copy-post-btn {
-    font-size: 11px !important;
-    padding: 6px 8px !important;
+  .winner-item {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .copy-user-btn {
+    font-size: 13px;
+  }
+
+  .copy-post-btn {
+    font-size: 11px;
+    padding: 5px 8px;
   }
 }
