@@ -70,11 +70,6 @@ async function loadWorks() {
     const data = await response.json();
     works = data.records || [];
 
-    // Новая сложная сортировка:
-    // 1. Видео + Описание (первыми)
-    // 2. Только Описание
-    // 3. Без текста
-    // 4. Залетные (в самом конце)
     works.sort((a, b) => {
       const aFields = a.fields || {};
       const bFields = b.fields || {};
@@ -210,14 +205,12 @@ function renderWorks() {
   });
 }
 
-// ПРОВЕРКА ПОП-АПОВ
 function handleCompletionModal() {
   const finishedEmployeesCount = employees.filter(empName => getEmployeeVotes(empName) >= 10).length;
 
   if (finishedEmployeesCount >= employees.length) {
     showWinnersModal();
   } else {
-    // Сброс всех состояний интерактивной игры
     clickStage = 0;
     subClickCount = 0;
     if (memeImage) memeImage.src = "hate2.jpg";
@@ -246,12 +239,10 @@ function handleCompletionModal() {
   }
 }
 
-// ИНТЕРАКТИВНЫЙ МИНИ-СЮЖЕТ (Хейт -> Хил -> Барби -> Взрыв -> Стопка УНО)
 if (healImgBox) {
   healImgBox.addEventListener("click", () => {
     subClickCount++;
 
-    // СТАДИЯ 0: Первые 3 клика — волшебный захилл
     if (clickStage === 0 && subClickCount >= 3) {
       clickStage = 1;
       subClickCount = 0;
@@ -276,7 +267,6 @@ if (healImgBox) {
       return;
     }
 
-    // СТАДИЯ 1: Следующие 3 клика после заживления — Барби с гранатой
     if (clickStage === 1 && subClickCount >= 3) {
       clickStage = 2;
       subClickCount = 0;
@@ -287,7 +277,6 @@ if (healImgBox) {
         healHintBox.className = "heal-hint-box warning";
       }
 
-      // Пауза 1.3 секунды перед взрывом
       setTimeout(() => {
         triggerExplosionAndUNO();
       }, 1300);
@@ -295,7 +284,6 @@ if (healImgBox) {
   });
 }
 
-// Клик по стопке карт (плавное циклическое перелистывание позиций классов)
 if (ronaldoGrid) {
   ronaldoGrid.addEventListener("click", () => {
     if (clickStage === 3) {
@@ -329,7 +317,7 @@ function triggerExplosionAndUNO() {
     if (healHintBox) healHintBox.style.display = "none";
 
     if (waitTitle) waitTitle.textContent = "Сила ИИндии теперь с тобой!";
-    if (waitText) waitText.style.display = "none"; // Убираем вторую строку
+    if (waitText) waitText.style.display = "none";
 
     if (ronaldoGrid) ronaldoGrid.style.display = "block";
   }, 700);
