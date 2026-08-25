@@ -206,9 +206,7 @@ function handleCompletionModal() {
     if (ronaldoGrid) {
       ronaldoGrid.style.display = "none";
       const cards = ronaldoGrid.querySelectorAll(".uno-card");
-      cards.forEach((c, idx) => {
-        c.className = `uno-card pos-${idx}`;
-      });
+      cards.forEach(c => c.classList.remove("swapped"));
     }
     if (waitTitle) waitTitle.textContent = "Твой голос учтен!";
     if (waitText) {
@@ -276,25 +274,17 @@ if (healImgBox) {
   });
 }
 
-// Клик по стопке карт (плавное циклическое перелистывание позиций классов)
+// Клик по стопке карт (перемещение верхней карты в конец стопки в стиле UNO)
 if (ronaldoGrid) {
   ronaldoGrid.addEventListener("click", () => {
     if (clickStage === 3) {
-      const cards = Array.from(ronaldoGrid.querySelectorAll(".uno-card"));
-      const topCard = cards.find(c => c.classList.contains("pos-0"));
-
-      if (topCard) {
-        topCard.classList.add("swapping");
-
+      const cards = ronaldoGrid.querySelectorAll(".uno-card");
+      if (cards.length > 0) {
+        cards[0].classList.add("swapped");
         setTimeout(() => {
-          cards.forEach(c => {
-            let currentPos = parseInt(c.dataset.pos);
-            let newPos = (currentPos - 1 + cards.length) % cards.length;
-            c.dataset.pos = newPos;
-            c.className = `uno-card pos-${newPos}`;
-          });
-          topCard.classList.remove("swapping");
-        }, 200);
+          cards[0].classList.remove("swapped");
+          ronaldoGrid.appendChild(cards[0]);
+        }, 300);
       }
     }
   });
