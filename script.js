@@ -61,7 +61,6 @@ function showToast(text) {
 
 async function loadVotes() {
   try {
-    // Добавляем параметр времени, чтобы браузер и Vercel не кешировали ответ Airtable
     const response = await fetch(`/api/votes?_t=${Date.now()}`);
     const data = await response.json();
     votes = data.records || [];
@@ -105,8 +104,15 @@ async function loadWorks() {
   }
 }
 
+// Проверка количества голосов за работу по ID записи
 function getVotesForWork(workId) {
-  return votes.filter(vote => vote.fields["Contest Work"]?.includes(workId)).length;
+  return votes.filter(vote => {
+    const workField = vote.fields["Contest Work"];
+    if (Array.isArray(workField)) {
+      return workField.includes(workId);
+    }
+    return workField === workId;
+  }).length;
 }
 
 function getEmployeeVotes(empName = employeeSelect.value) {
@@ -116,8 +122,9 @@ function getEmployeeVotes(empName = employeeSelect.value) {
 
 function getAuthorVote(username) {
   return votes.find(vote => {
-    const workId = vote.fields["Contest Work"]?.[0];
-    const work = works.find(item => item.id === workId);
+    const workIds = vote.fields["Contest Work"] || [];
+    const targetWorkId = Array.isArray(workIds) ? workIds[0] : workIds;
+    const work = works.find(item => item.id === targetWorkId);
     return (
       vote.fields["Voter Name"] === employeeSelect.value &&
       work?.fields?.Username === username
@@ -126,10 +133,11 @@ function getAuthorVote(username) {
 }
 
 function hasCurrentWorkVote(workId) {
-  return votes.some(vote =>
-    vote.fields["Voter Name"] === employeeSelect.value &&
-    vote.fields["Contest Work"]?.includes(workId)
-  );
+  return votes.some(vote => {
+    const workField = vote.fields["Contest Work"];
+    const isMatch = Array.isArray(workField) ? workField.includes(workId) : (workField === workId);
+    return vote.fields["Voter Name"] === employeeSelect.value && isMatch;
+  });
 }
 
 function renderMedia(files) {
@@ -502,14 +510,16 @@ document.addEventListener("click", async e => {
     setTimeout(() => { voteAnimBadge.className = "vote-anim-badge"; }, 800);
   }
 
-  // Оптимистичное локальное обновление для мгновенного отклика
+  // Оптимистичное локальное обновление
   if (removing) {
-    votes = votes.filter(vote =>
-      !(vote.fields["Voter Name"] === voterName && vote.fields["Contest Work"]?.includes(contestWork))
-    );
+    votes = votes.filter(vote => {
+      const workField = vote.fields["Contest Work"];
+      const isMatch = Array.isArray(workField) ? workField.includes(contestWork) : (workField === contestWork);
+      return !(vote.fields["Voter Name"] === voterName && isMatch);
+    });
   } else {
     votes.push({
-      id: "temp",
+      id: "temp_" + Date.now(),
       fields: {
         "Voter Name": voterName,
         "Contest Work": [contestWork]
@@ -524,7 +534,7 @@ document.addEventListener("click", async e => {
     setTimeout(handleCompletionModal, 300);
   }
 
-  // Отправка запроса в Airtable через бэкенд
+  // Отправка на бэкенд и синхронизация
   try {
     await fetch("/api/vote", {
       method: "POST",
@@ -536,11 +546,11 @@ document.addEventListener("click", async e => {
       })
     });
     
-    // Даем Airtable 400 мс на запись и пересчет формул, затем запрашиваем свежие данные
+    // Даем Airtable время на запись, затем запрашиваем актуальные данные
     setTimeout(async () => {
       await loadVotes();
       updateUIAfterVote();
-    }, 400);
+    }, 800);
 
   } catch (err) {
     console.error("Ошибка сохранения голоса:", err);
