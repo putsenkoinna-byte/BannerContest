@@ -414,16 +414,18 @@ h1 {
 }
 
 .wait-card.shake {
-  animation: shakeCard 0.8s ease-in-out;
+  animation: shakeCard 1.4s ease-in-out;
 }
 
 @keyframes shakeCard {
   0%, 100% { transform: translateX(0); }
-  15% { transform: translateX(-16px) rotate(-3deg); }
-  30% { transform: translateX(16px) rotate(3deg); }
-  45% { transform: translateX(-12px) rotate(-2deg); }
-  60% { transform: translateX(12px) rotate(2deg); }
-  75% { transform: translateX(-6px) rotate(-1deg); }
+  10% { transform: translateX(-14px) rotate(-3deg); }
+  20% { transform: translateX(14px) rotate(3deg); }
+  30% { transform: translateX(-12px) rotate(-2deg); }
+  40% { transform: translateX(12px) rotate(2deg); }
+  50% { transform: translateX(-10px) rotate(-1.5deg); }
+  65% { transform: translateX(8px) rotate(1deg); }
+  80% { transform: translateX(-4px) rotate(-0.5deg); }
 }
 
 .wait-title {
@@ -529,11 +531,11 @@ h1 {
   100% { opacity: 0; transform: scale(1); }
 }
 
-/* Заметный красный взрыв */
+/* Плавный и долгий красный взрыв */
 .explosion-overlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle, #ff0055 0%, #ff4757 45%, #000000 100%);
+  background: radial-gradient(circle, #ff0055 0%, #ff4757 40%, #000000 100%);
   opacity: 0;
   pointer-events: none;
   z-index: 30;
@@ -541,13 +543,14 @@ h1 {
 }
 
 .explosion-overlay.active {
-  animation: explodeAnim 1.2s cubic-bezier(0.11, 0.85, 0.35, 0.96) forwards;
+  animation: explodeAnim 1.6s cubic-bezier(0.11, 0.85, 0.35, 0.96) forwards;
 }
 
 @keyframes explodeAnim {
-  0% { opacity: 0; transform: scale(0.1); }
-  35% { opacity: 1; transform: scale(1.3); }
-  100% { opacity: 0; transform: scale(2.5); }
+  0% { opacity: 0; transform: scale(0.05); }
+  30% { opacity: 0.95; transform: scale(1.1); }
+  60% { opacity: 0.7; transform: scale(1.8); }
+  100% { opacity: 0; transform: scale(3); }
 }
 
 /* Крупные, долго летящие сердечки */
@@ -582,29 +585,39 @@ h1 {
   }
 }
 
-/* Сетка из двух Роналду (без черного фона, естественные пропорции) */
-.ronaldo-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-top: 14px;
+/* Стопка карточек в стиле игры UNO */
+.uno-stack-container {
+  position: relative;
   width: 100%;
+  max-width: 290px;
+  height: 380px;
+  margin: 10px auto 0;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.uno-card {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 2px solid rgba(234, 179, 8, 0.5);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+  background: #000;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform: translateY(calc(var(--i) * 10px)) translateX(calc(var(--i) * 8px)) rotate(calc(var(--i) * 2deg)) scale(calc(1 - var(--i) * 0.03));
+  z-index: calc(10 - var(--i));
 }
 
 .ronaldo-img {
   width: 100%;
-  height: auto;
-  max-height: 320px;
+  height: 100%;
   object-fit: contain;
-  background: transparent;
-  border-radius: 18px;
-  border: 2px solid rgba(234, 179, 8, 0.4);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
-  transition: transform 0.2s ease;
-}
-
-.ronaldo-img:hover {
-  transform: scale(1.03);
+  background: #000;
+  display: block;
 }
 
 .toast {
