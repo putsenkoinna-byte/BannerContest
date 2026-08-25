@@ -22,15 +22,20 @@ const stickyCounterText = document.getElementById("stickyCounterText");
 const voteAnimBadge = document.getElementById("voteAnimBadge");
 const toast = document.getElementById("toast");
 
-// Пасхалка заживления
+// Пасхалки и интерактивные эффекты
 const memeImage = document.getElementById("memeImage");
 const healImgBox = document.getElementById("healImgBox");
 const healHintBox = document.getElementById("healHintBox");
 const flashOverlay = document.getElementById("flashOverlay");
+const explosionOverlay = document.getElementById("explosionOverlay");
 const heartsContainer = document.getElementById("heartsContainer");
+const ronaldoGrid = document.getElementById("ronaldoGrid");
+const waitCardBox = document.getElementById("waitCardBox");
+const waitTitle = document.getElementById("waitTitle");
+const waitText = document.getElementById("waitText");
 
-let clickCount = 0;
-let isHealed = false;
+let clickStage = 0; // 0: Start, 1: Healed, 2: Barbie, 3: Ronaldo
+let subClickCount = 0;
 
 let votes = [];
 let works = [];
@@ -186,61 +191,101 @@ function renderWorks() {
   });
 }
 
-// ПРОВЕРКА ПОП-АПОВ: ПОБЕДИТЕЛИ ТОЛЬКО ЕСЛИ ВСЕ 6 СОТРУДНИКОВ ОТДАЛИ ПО 10 ГОЛОСОВ
+// ПРОВЕРКА ПОП-АПОВ
 function handleCompletionModal() {
   const finishedEmployeesCount = employees.filter(empName => getEmployeeVotes(empName) >= 10).length;
 
   if (finishedEmployeesCount >= employees.length) {
     showWinnersModal();
   } else {
-    // Сброс пасхалки к исходному состоянию
-    clickCount = 0;
-    isHealed = false;
+    // Сброс всех состояний интерактивной игры
+    clickStage = 0;
+    subClickCount = 0;
     if (memeImage) memeImage.src = "hate2.jpg";
+    if (healImgBox) healImgBox.style.display = "block";
+    if (ronaldoGrid) ronaldoGrid.style.display = "none";
+    if (waitTitle) waitTitle.textContent = "Ваш голос учтен!";
+    if (waitText) waitText.innerHTML = "Чья-то нервная система уже готовится к хейту в чате.<br>Да прибудет с вами сила 🫡";
     if (healHintBox) {
+      healHintBox.style.display = "flex";
+      healHintBox.className = "heal-hint-box";
       healHintBox.innerHTML = `
         <span class="hint-text">Нажми три раза, если хочешь помочь девочкам захиллиться 💅</span>
         <span class="hint-arrow">👇</span>
       `;
-      healHintBox.classList.remove("healed");
     }
     waitModalOverlay.classList.add("active");
   }
 }
 
-// Логика 3 кликов по стикеру
+// ИНТЕРАКТИВНЫЙ МИНИ-СЮЖЕТ
 if (healImgBox) {
   healImgBox.addEventListener("click", () => {
-    if (isHealed) return;
+    subClickCount++;
 
-    clickCount++;
+    // СТАДИЯ 1: Первые 3 клика — волшебный захилл по пивку
+    if (clickStage === 0 && subClickCount >= 3) {
+      clickStage = 1;
+      subClickCount = 0;
 
-    if (clickCount >= 3) {
-      isHealed = true;
-
-      // Вспышка
+      healImgBox.classList.add("magic-transition");
       flashOverlay.classList.add("active");
 
       setTimeout(() => {
-        // Замена изображения на довольных девочек по пивку
         memeImage.src = "heal.jpg";
-        
-        // Обновление надписи и скрытие стрелки
-        const hintBox = document.getElementById("healHintBox");
-        if (hintBox) {
-          hintBox.innerHTML = `<span>Спасибо 💖🍻</span>`;
-          hintBox.classList.add("healed");
+        if (healHintBox) {
+          healHintBox.innerHTML = `<span>Спасибо 💖🍻</span>`;
+          healHintBox.className = "heal-hint-box healed";
         }
       }, 250);
 
       setTimeout(() => {
         flashOverlay.classList.remove("active");
+        healImgBox.classList.remove("magic-transition");
       }, 500);
 
-      // Запуск сердечек
       createHeartsEffect();
+      return;
+    }
+
+    // СТАДИЯ 2: Повторные клики после заживления — Барби с гранатой
+    if (clickStage === 1 && subClickCount >= 3) {
+      clickStage = 2;
+      subClickCount = 0;
+
+      memeImage.src = "barbie.jpg";
+      if (healHintBox) {
+        healHintBox.innerHTML = `<span>Ты что наделал? 🥲💣</span>`;
+        healHintBox.className = "heal-hint-box warning";
+      }
+
+      // Запуск таймера взрыва
+      setTimeout(() => {
+        triggerExplosionAndRonaldo();
+      }, 1400);
     }
   });
+}
+
+function triggerExplosionAndRonaldo() {
+  if (explosionOverlay) explosionOverlay.classList.add("active");
+  if (waitCardBox) waitCardBox.classList.add("shake");
+
+  setTimeout(() => {
+    clickStage = 3;
+    if (healImgBox) healImgBox.style.display = "none";
+    if (healHintBox) healHintBox.style.display = "none";
+
+    if (waitTitle) waitTitle.textContent = "ТЕПЕРЬ ЖИВИ С ЭТИМ ⚽🔥";
+    if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Сила Роналду теперь с тобой!";
+
+    if (ronaldoGrid) ronaldoGrid.style.display = "grid";
+  }, 400);
+
+  setTimeout(() => {
+    if (explosionOverlay) explosionOverlay.classList.remove("active");
+    if (waitCardBox) waitCardBox.classList.remove("shake");
+  }, 800);
 }
 
 function createHeartsEffect() {
@@ -249,7 +294,7 @@ function createHeartsEffect() {
 
   const emojis = ["❤️", "💖", "💕", "🍻", "✨", "🥰"];
 
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 20; i++) {
     const heart = document.createElement("div");
     heart.className = "floating-heart";
     heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
