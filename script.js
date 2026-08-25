@@ -203,7 +203,11 @@ function handleCompletionModal() {
     subClickCount = 0;
     if (memeImage) memeImage.src = "hate2.jpg";
     if (healImgBox) healImgBox.style.display = "block";
-    if (ronaldoGrid) ronaldoGrid.style.display = "none";
+    if (ronaldoGrid) {
+      ronaldoGrid.style.display = "none";
+      const cards = ronaldoGrid.querySelectorAll(".uno-card");
+      cards.forEach(c => c.classList.remove("swapped"));
+    }
     if (waitTitle) waitTitle.textContent = "Твой голос учтен!";
     if (waitText) {
       waitText.style.display = "block";
@@ -276,7 +280,12 @@ if (ronaldoGrid) {
     if (clickStage === 3) {
       const cards = ronaldoGrid.querySelectorAll(".uno-card");
       if (cards.length > 0) {
-        ronaldoGrid.appendChild(cards[0]);
+        // Переносим первую карточку в конец контейнера, сбрасывая класс анимации
+        cards[0].classList.add("swapped");
+        setTimeout(() => {
+          cards[0].classList.remove("swapped");
+          ronaldoGrid.appendChild(cards[0]);
+        }, 300);
       }
     }
   });
