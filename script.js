@@ -175,8 +175,9 @@ function renderWorks() {
   });
 }
 
+// Поп-ап победителей откроется ТОЛЬКО когда в системе ровно 60 голосов (все 6 человек отдали по 10)
 function handleCompletionModal() {
-  const maxPossibleVotes = employees.length * 10;
+  const maxPossibleVotes = employees.length * 10; // 60 голосов
   
   if (votes.length >= maxPossibleVotes) {
     showWinnersModal();
@@ -206,14 +207,15 @@ function showWinnersModal() {
     el.className = "winner-item";
     el.innerHTML = `
       <div class="winner-rank">${index + 1}</div>
-      <button class="winner-name-btn" data-copy-user="@${item.author}" title="Нажмите, чтобы скопировать">
-        @${item.author} <span class="copy-icon">📋</span>
+      <button class="copy-user-btn" data-copy-user="@${item.author}">
+        <span>@${item.author}</span>
+        <span class="copy-hint">Скопировать ник</span>
       </button>
       <div class="winner-actions">
         <div class="winner-count">❤️ ${item.votes}</div>
         ${item.postLink ? `
           <button class="copy-post-btn" data-copy-link="${item.postLink}">
-            🔗 Пост
+            🔗 Скопировать ссылку
           </button>
         ` : ''}
       </div>
@@ -233,15 +235,19 @@ function checkHashUrl() {
 window.addEventListener("hashchange", checkHashUrl);
 
 document.addEventListener("click", async e => {
-  if (e.target.closest("[data-copy-user]")) {
-    const username = e.target.closest("[data-copy-user]").dataset.copyUser;
+  // Копирование никнейма
+  const userBtn = e.target.closest("[data-copy-user]");
+  if (userBtn) {
+    const username = userBtn.dataset.copyUser;
     navigator.clipboard.writeText(username);
-    showToast(`Юзернейм ${username} скопирован!`);
+    showToast(`Ник ${username} скопирован!`);
     return;
   }
 
-  if (e.target.closest("[data-copy-link]")) {
-    const link = e.target.closest("[data-copy-link]").dataset.copyLink;
+  // Копирование ссылки на пост (БЕЗ перенаправления!)
+  const linkBtn = e.target.closest("[data-copy-link]");
+  if (linkBtn) {
+    const link = linkBtn.dataset.copyLink;
     navigator.clipboard.writeText(link);
     showToast("Ссылка на пост скопирована!");
     return;
@@ -287,7 +293,6 @@ document.addEventListener("click", async e => {
     return;
   }
 
-  // Запуск вылетающей анимации при клике
   if (voteAnimBadge) {
     voteAnimBadge.textContent = removing ? "+1" : "-1";
     voteAnimBadge.className = `vote-anim-badge ${removing ? "anim-remove" : "anim-add"}`;
