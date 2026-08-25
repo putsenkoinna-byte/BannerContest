@@ -44,6 +44,7 @@ select {
   margin-bottom: 24px;
 }
 
+/* Сетка карточек на ПК */
 #works {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -162,6 +163,7 @@ select {
   font-size: 18px;
 }
 
+/* Слайдер для медиа */
 .slider {
   position: relative;
   width: 100%;
@@ -200,6 +202,7 @@ select {
 .slider-prev { left: 10px; }
 .slider-next { right: 10px; }
 
+/* Счетчики и бабблы */
 .sticky-counter {
   position: fixed;
   bottom: 16px;
@@ -238,7 +241,7 @@ select {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ИДЕАЛЬНОЕ ЦЕНТРИРОВАНИЕ И ФИКС ПОП-АПА */
+/* ИДЕАЛЬНЫЙ ПОП-АП С ПОДЛОЖКОЙ КАК НА ЭТАЛОНЕ (И ДЛЯ ПК, И ДЛЯ ТЕЛЕФОНОВ) */
 .modal-overlay {
   position: fixed !important;
   top: 0 !important;
@@ -253,9 +256,10 @@ select {
   pointer-events: none;
   transition: opacity 0.3s ease;
   z-index: 99999 !important;
-  padding: 20px !important;
+  padding: 16px !important;
   box-sizing: border-box !important;
   overflow-y: auto !important;
+  backdrop-filter: blur(5px);
 }
 
 .modal-overlay.active {
@@ -267,10 +271,10 @@ select {
   background-color: #161822 !important;
   border: 1px solid #2e3248 !important;
   border-radius: 24px !important;
-  padding: 30px 24px !important;
+  padding: 32px 24px !important;
   width: 100% !important;
-  max-width: 480px !important;
-  max-height: 85vh !important;
+  max-width: 520px !important;
+  max-height: 90vh !important;
   overflow-y: auto !important;
   box-sizing: border-box !important;
   position: relative !important;
@@ -279,15 +283,12 @@ select {
   text-align: center !important;
 }
 
-/* Жестко ограничиваем кубок, чтобы он был внутри поп-апа, а не на пол-экрана */
-.modal-content img,
-.modal-overlay img {
+/* Аккуратный размер кубка внутри карточки поп-апа */
+.modal-content img {
   width: 64px !important;
   height: 64px !important;
   max-width: 64px !important;
   max-height: 64px !important;
-  min-width: 64px !important;
-  min-height: 64px !important;
   margin: 0 auto 16px auto !important;
   display: block !important;
   object-fit: contain !important;
@@ -329,12 +330,6 @@ select {
 
 .copy-user-btn:hover {
   color: #818cf8;
-}
-
-.winner-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .copy-post-btn {
