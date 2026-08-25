@@ -292,7 +292,6 @@ function handleCompletionModal() {
   }
 }
 
-// ВОЗВРАЩЕНЫ КЛИКИ ПО МЕМАМ И ХИЛУ
 function triggerClickFeedback(isWarning = false) {
   if (!healImgBox) return;
   healImgBox.classList.remove("click-shake");
@@ -431,19 +430,19 @@ function createHeartsEffect() {
   }
 }
 
-// ПОП-АП ПОБЕДИТЕЛЕЙ (БЕЗ СЕРДЕЧЕК)
+// ПОП-АП ПОБЕДИТЕЛЕЙ С СЕРДЕЧКАМИ И КОЛИЧЕСТВОМ ГОЛОСОВ
 window.showWinnersModal = function() {
   const top10 = [
-    { author: "BladeTag", postLink: "https://t.me/qq1win/5273481" },
-    { author: "s3x1r", postLink: "https://t.me/qq1win/5273675" },
-    { author: "Jeka_23", postLink: "https://t.me/qq1win/5274743" },
-    { author: "Felice_Kr", postLink: "https://t.me/qq1win/5271739" },
-    { author: "snchzs887", postLink: "https://t.me/qq1win/5272129" },
-    { author: "kkaaaooo", postLink: "https://t.me/qq1win/5272269" },
-    { author: "RussianTelevisionTV", postLink: "https://t.me/qq1win/5272883" },
-    { author: "timmimimmi", postLink: "https://t.me/qq1win/5273144" },
-    { author: "Lev_Borisovv", postLink: "https://t.me/qq1win/5274744" },
-    { author: "kksskkl", postLink: "https://t.me/qq1win/5271902" }
+    { author: "BladeTag", postLink: "https://t.me/qq1win/5273481", votes: 5 },
+    { author: "s3x1r", postLink: "https://t.me/qq1win/5273675", votes: 4 },
+    { author: "Jeka_23", postLink: "https://t.me/qq1win/5274743", votes: 4 },
+    { author: "Felice_Kr", postLink: "https://t.me/qq1win/5271739", votes: 3 },
+    { author: "snchzs887", postLink: "https://t.me/qq1win/5272129", votes: 3 },
+    { author: "kkaaaooo", postLink: "https://t.me/qq1win/5272269", votes: 3 },
+    { author: "RussianTelevisionTV", postLink: "https://t.me/qq1win/5272883", votes: 3 },
+    { author: "timmimimmi", postLink: "https://t.me/qq1win/5273144", votes: 3 },
+    { author: "Lev_Borisovv", postLink: "https://t.me/qq1win/5274744", votes: 3 },
+    { author: "kksskkl", postLink: "https://t.me/qq1win/5271902", votes: 2 }
   ];
 
   if (winnersList) {
@@ -458,8 +457,9 @@ window.showWinnersModal = function() {
           @${item.author}
         </button>
         <div class="winner-actions">
+          <div class="winner-count">❤️ ${item.votes}</div>
           <button class="copy-post-btn" data-copy-link="${item.postLink}">
-            🔗 Ссылка
+            🔗 Скопировать ссылку
           </button>
         </div>
       `;
