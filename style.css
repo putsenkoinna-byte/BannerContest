@@ -330,22 +330,52 @@ body {
 .modal-title { margin: 0; font-size: 24px; font-weight: 800; color: #fff; }
 .modal-subtitle { font-size: 14px; color: var(--text-secondary); margin-top: 6px; }
 
-.winners-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 4px; }
+/* Список побегов (аккуратный скролл и выравнивание) */
+.winners-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 6px;
+  max-height: 55vh;
+}
+
+.winners-list::-webkit-scrollbar {
+  width: 6px;
+}
+.winners-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+}
+.winners-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 229, 255, 0.2);
+  border-radius: 10px;
+}
+.winners-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.4);
+}
 
 .winner-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-md);
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.winner-rank { font-weight: 800; font-size: 16px; width: 24px; text-align: center; color: var(--text-secondary); }
+.winner-rank {
+  font-weight: 800;
+  font-size: 16px;
+  min-width: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
 
 .copy-user-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
   background: rgba(255, 255, 255, 0.06);
@@ -353,10 +383,11 @@ body {
   color: #fff;
   font-weight: 700;
   font-size: 14px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .copy-user-btn:hover {
@@ -374,14 +405,25 @@ body {
   border-radius: 4px;
 }
 
-.winner-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-.winner-count { font-weight: 700; color: var(--accent-cyan); font-size: 15px; }
+.winner-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.winner-count {
+  font-weight: 700;
+  color: var(--accent-cyan);
+  font-size: 15px;
+  white-space: nowrap;
+}
 
 .copy-post-btn {
   background: rgba(0, 112, 243, 0.15);
   border: 1px solid rgba(0, 112, 243, 0.4);
   color: var(--accent-cyan);
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 700;
@@ -390,6 +432,7 @@ body {
   align-items: center;
   gap: 6px;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .copy-post-btn:hover {
@@ -576,7 +619,7 @@ body {
   }
 }
 
-/* Стопка карточек с Роналду (4 слоя) */
+/* Стопка карточек в стиле игры UNO */
 .uno-stack-container {
   position: relative;
   width: 100%;
