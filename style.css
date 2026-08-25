@@ -585,7 +585,7 @@ h1 {
   }
 }
 
-/* Стопка карточек в стиле игры UNO с реальным смещением */
+/* Стопка карточек в стиле игры UNO */
 .uno-stack-container {
   position: relative;
   width: 100%;
@@ -608,8 +608,14 @@ h1 {
   border: 2px solid rgba(234, 179, 8, 0.5);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  transform: translateY(calc(var(--i) * 12px)) translateX(calc(var(--i) * 10px)) rotate(calc(var(--i) * 3deg)) scale(calc(1 - var(--i) * 0.03));
-  z-index: calc(10 - var(--i));
+  transform: translateY(calc(var(--index) * 12px)) translateX(calc(var(--index) * 10px)) rotate(calc(var(--index) * 3deg)) scale(calc(1 - var(--index) * 0.03));
+  z-index: calc(10 - var(--index));
+}
+
+.uno-card.swapped {
+  transform: translateY(36px) translateX(30px) rotate(9deg) scale(0.88);
+  z-index: 1;
+  opacity: 0.8;
 }
 
 .toast {
