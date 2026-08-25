@@ -276,7 +276,7 @@ function triggerExplosionAndRonaldo() {
     if (healImgBox) healImgBox.style.display = "none";
     if (healHintBox) healHintBox.style.display = "none";
 
-    if (waitTitle) waitTitle.textContent = "ТЕПЕРЬ ЖИВИ С ЭТИМ ⚽🔥";
+    if (waitTitle) waitTitle.textContent = "ТЕПЕРЬ ЖИВИ С ЭТИМ 🔥";
     if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Сила Роналду теперь с тобой!";
 
     if (ronaldoGrid) ronaldoGrid.style.display = "grid";
