@@ -22,6 +22,16 @@ const stickyCounterText = document.getElementById("stickyCounterText");
 const voteAnimBadge = document.getElementById("voteAnimBadge");
 const toast = document.getElementById("toast");
 
+// Пасхалка заживления
+const memeImage = document.getElementById("memeImage");
+const healImgBox = document.getElementById("healImgBox");
+const healHintBox = document.getElementById("healHintBox");
+const flashOverlay = document.getElementById("flashOverlay");
+const heartsContainer = document.getElementById("heartsContainer");
+
+let clickCount = 0;
+let isHealed = false;
+
 let votes = [];
 let works = [];
 
@@ -183,7 +193,70 @@ function handleCompletionModal() {
   if (finishedEmployeesCount >= employees.length) {
     showWinnersModal();
   } else {
+    // Сброс пасхалки к исходному состоянию
+    clickCount = 0;
+    isHealed = false;
+    if (memeImage) memeImage.src = "hate2.png";
+    if (healHintBox) {
+      healHintBox.innerHTML = `
+        <span class="hint-text">Нажми три раза, если хочешь помочь девочкам захиллиться 💅</span>
+        <span class="hint-arrow">👇</span>
+      `;
+      healHintBox.classList.remove("healed");
+    }
     waitModalOverlay.classList.add("active");
+  }
+}
+
+// Логика 3 кликов по стикеру
+if (healImgBox) {
+  healImgBox.addEventListener("click", () => {
+    if (isHealed) return;
+
+    clickCount++;
+
+    if (clickCount >= 3) {
+      isHealed = true;
+
+      // Вспышка
+      flashOverlay.classList.add("active");
+
+      setTimeout(() => {
+        // Замена изображения на довольных девочек по пивку
+        memeImage.src = "heal.png";
+        
+        // Обновление надписи и скрытие стрелки
+        const hintBox = document.getElementById("healHintBox");
+        if (hintBox) {
+          hintBox.innerHTML = `<span>Спасибо 💖🍻</span>`;
+          hintBox.classList.add("healed");
+        }
+      }, 250);
+
+      setTimeout(() => {
+        flashOverlay.classList.remove("active");
+      }, 500);
+
+      // Запуск сердечек
+      createHeartsEffect();
+    }
+  });
+}
+
+function createHeartsEffect() {
+  if (!heartsContainer) return;
+  heartsContainer.innerHTML = "";
+
+  const emojis = ["❤️", "💖", "💕", "🍻", "✨", "🥰"];
+
+  for (let i = 0; i < 18; i++) {
+    const heart = document.createElement("div");
+    heart.className = "floating-heart";
+    heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    heart.style.left = `${Math.random() * 85 + 5}%`;
+    heart.style.animationDelay = `${Math.random() * 0.4}s`;
+    heart.style.animationDuration = `${1.2 + Math.random() * 0.6}s`;
+    heartsContainer.appendChild(heart);
   }
 }
 
@@ -340,7 +413,7 @@ function updateCounterDisplay() {
     if (stickyCounterText) stickyCounterText.innerHTML = `Осталось голосов: <span>${remaining}</span>`;
     if (stickyCounter) stickyCounter.classList.add("visible");
   } else {
-    if (counter) counter.textContent = ""; // скрываем надпись под селектом в исходном состоянии
+    if (counter) counter.textContent = "";
     if (stickyCounter) stickyCounter.classList.remove("visible");
   }
 }
