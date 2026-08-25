@@ -225,14 +225,14 @@ select {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ОРИГИНАЛЬНЫЙ ПОП-АП С ПОЛНЫМ СОХРАНЕНИЕМ ДИЗАЙНА */
+/* ПОП-АП ПОБЕДИТЕЛЕЙ */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -240,6 +240,9 @@ select {
   pointer-events: none;
   transition: opacity 0.3s ease;
   z-index: 999;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .modal-overlay.active {
@@ -251,24 +254,23 @@ select {
   background-color: #161822;
   border: 1px solid #2e3248;
   border-radius: 20px;
-  padding: 24px;
-  width: 90%;
-  max-width: 480px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 460px;
   box-sizing: border-box;
-  max-height: 85vh;
+  max-height: 90vh;
   overflow-y: auto;
   position: relative;
 }
 
-/* Точечный фикс: уменьшаем только картинку трофея прямо в шапке модалки, не трогая остальное */
-.modal-content > img:first-of-type,
-.modal-content img[src*="trophy"],
-.modal-content img[alt*="trophy"],
-.modal-content img:not(.winner-item img) {
-  width: 50px !important;
-  height: 50px !important;
-  max-width: 50px !important;
-  max-height: 50px !important;
+/* ЖЕСТКИЙ ФИКС ЛЮБЫХ КАРТИНОК И ЭЛЕМЕНТОВ В ШАПКЕ ПОП-АПА (УБИРАЕТ ОГРОМНЫЙ КУБОК) */
+.modal-content > img,
+.modal-content svg,
+.modal-content div:first-child img {
+  max-width: 60px !important;
+  max-height: 60px !important;
+  width: 60px !important;
+  height: 60px !important;
   margin: 0 auto 12px auto !important;
   display: block !important;
   object-fit: contain !important;
@@ -281,15 +283,15 @@ select {
   background: #1f2233;
   padding: 10px 14px;
   border-radius: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   gap: 10px;
 }
 
 .winner-rank {
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
   color: #818cf8;
-  min-width: 24px;
+  min-width: 22px;
 }
 
 .copy-user-btn {
@@ -298,20 +300,28 @@ select {
   background: transparent;
   color: #ffffff;
   border: none;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.copy-user-btn:hover {
+  color: #818cf8;
 }
 
 .copy-post-btn {
   background-color: #2e3248;
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 @keyframes clickShake {
