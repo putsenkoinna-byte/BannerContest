@@ -237,12 +237,12 @@ if (healImgBox) {
           healHintBox.innerHTML = `<span>Спасибо 💖🍻</span>`;
           healHintBox.className = "heal-hint-box healed";
         }
-      }, 250);
+      }, 350);
 
       setTimeout(() => {
         flashOverlay.classList.remove("active");
         healImgBox.classList.remove("magic-transition");
-      }, 500);
+      }, 700);
 
       createHeartsEffect();
       return;
@@ -259,7 +259,7 @@ if (healImgBox) {
         healHintBox.className = "heal-hint-box warning";
       }
 
-      // Пауза 3 секунды, чтобы Барби успела покрасоваться
+      // Пауза 3 секунды для Барби
       setTimeout(() => {
         triggerExplosionAndRonaldo();
       }, 3000);
@@ -276,16 +276,16 @@ function triggerExplosionAndRonaldo() {
     if (healImgBox) healImgBox.style.display = "none";
     if (healHintBox) healHintBox.style.display = "none";
 
-    if (waitTitle) waitTitle.textContent = "ТЕПЕРЬ ЖИВИ С ЭТИМ...";
-    if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Сила ИИндии теперь с тобой!";
+    if (waitTitle) waitTitle.textContent = "ТЕПЕРЬ ЖИВИ С ЭТИМ ⚽🔥";
+    if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Сила ИИндии теперь с тобой! 🇮🇳";
 
     if (ronaldoGrid) ronaldoGrid.style.display = "grid";
-  }, 400);
+  }, 500);
 
   setTimeout(() => {
     if (explosionOverlay) explosionOverlay.classList.remove("active");
     if (waitCardBox) waitCardBox.classList.remove("shake");
-  }, 900);
+  }, 1200);
 }
 
 function createHeartsEffect() {
@@ -294,13 +294,13 @@ function createHeartsEffect() {
 
   const emojis = ["❤️", "💖", "💕", "🍻", "✨", "🥰"];
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 24; i++) {
     const heart = document.createElement("div");
     heart.className = "floating-heart";
     heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
     heart.style.left = `${Math.random() * 85 + 5}%`;
-    heart.style.animationDelay = `${Math.random() * 0.4}s`;
-    heart.style.animationDuration = `${1.2 + Math.random() * 0.6}s`;
+    heart.style.animationDelay = `${Math.random() * 0.5}s`;
+    heart.style.animationDuration = `${1.8 + Math.random() * 0.8}s`;
     heartsContainer.appendChild(heart);
   }
 }
