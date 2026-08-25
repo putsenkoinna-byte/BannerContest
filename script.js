@@ -22,7 +22,6 @@ const stickyCounterText = document.getElementById("stickyCounterText");
 const voteAnimBadge = document.getElementById("voteAnimBadge");
 const toast = document.getElementById("toast");
 
-// Пасхалки и интерактивные эффекты
 const memeImage = document.getElementById("memeImage");
 const healImgBox = document.getElementById("healImgBox");
 const healHintBox = document.getElementById("healHintBox");
@@ -34,7 +33,7 @@ const waitCardBox = document.getElementById("waitCardBox");
 const waitTitle = document.getElementById("waitTitle");
 const waitText = document.getElementById("waitText");
 
-let clickStage = 0; // 0: Start (Hate -> Heal), 1: Healed, 2: Barbie, 3: UNO Stack
+let clickStage = 0;
 let subClickCount = 0;
 
 let votes = [];
@@ -70,7 +69,6 @@ async function loadWorks() {
     const data = await response.json();
     works = data.records || [];
 
-    // Сортировка: Видео+Описание -> Описание -> Без текста -> Залетные
     works.sort((a, b) => {
       const aFields = a.fields || {};
       const bFields = b.fields || {};
@@ -127,15 +125,16 @@ function hasCurrentWorkVote(workId) {
   );
 }
 
+// Оптимизировано: добавлен loading="lazy" и preload="metadata"
 function renderMedia(files) {
   if (!files || !files.length) return "";
 
   if (files.length === 1) {
     const file = files[0];
     if (file.type?.startsWith("video")) {
-      return `<video controls src="${file.url}"></video>`;
+      return `<video controls preload="metadata" src="${file.url}"></video>`;
     }
-    return `<img src="${file.url}" alt="work">`;
+    return `<img src="${file.url}" alt="work" loading="lazy">`;
   }
 
   return `
@@ -144,9 +143,9 @@ function renderMedia(files) {
       <div class="slider-items">
         ${files.map((file, index) => {
           if (file.type?.startsWith("video")) {
-            return `<video class="slider-item ${index === 0 ? "active" : ""}" controls src="${file.url}"></video>`;
+            return `<video class="slider-item ${index === 0 ? "active" : ""}" controls preload="metadata" src="${file.url}"></video>`;
           }
-          return `<img class="slider-item ${index === 0 ? "active" : ""}" src="${file.url}" alt="work">`;
+          return `<img class="slider-item ${index === 0 ? "active" : ""}" src="${file.url}" alt="work" loading="lazy">`;
         }).join("")}
       </div>
       <button type="button" class="slider-next">›</button>
@@ -437,6 +436,9 @@ document.addEventListener("click", async e => {
 
   if (!e.target.classList.contains("vote-button")) return;
 
+  // Сохраняем позицию скролла перед голосованием
+  const scrollPosition = window.scrollY;
+
   const button = e.target;
   const voterName = employeeSelect.value;
   const contestWork = button.dataset.work;
@@ -472,6 +474,9 @@ document.addEventListener("click", async e => {
 
   renderWorks();
   updateCounterDisplay();
+
+  // Мгновенно возвращаем скролл на место
+  window.scrollTo({ top: scrollPosition, behavior: 'instant' });
 
   if (getEmployeeVotes() === 10 && !removing) {
     setTimeout(handleCompletionModal, 300);
