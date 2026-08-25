@@ -175,11 +175,12 @@ function renderWorks() {
   });
 }
 
-// Поп-ап победителей откроется ТОЛЬКО когда в системе ровно 60 голосов (все 6 человек отдали по 10)
+// Строгая проверка: окно победителей покажется ТОЛЬКО если в сумме 60 голосов со всех сотрудников
 function handleCompletionModal() {
-  const maxPossibleVotes = employees.length * 10; // 60 голосов
-  
-  if (votes.length >= maxPossibleVotes) {
+  const totalEmployees = employees.length; // 6 сотрудников
+  const requiredTotalVotes = totalEmployees * 10; // 60 голосов всего
+
+  if (votes.length >= requiredTotalVotes) {
     showWinnersModal();
   } else {
     waitModalOverlay.classList.add("active");
@@ -235,7 +236,6 @@ function checkHashUrl() {
 window.addEventListener("hashchange", checkHashUrl);
 
 document.addEventListener("click", async e => {
-  // Копирование никнейма
   const userBtn = e.target.closest("[data-copy-user]");
   if (userBtn) {
     const username = userBtn.dataset.copyUser;
@@ -244,7 +244,6 @@ document.addEventListener("click", async e => {
     return;
   }
 
-  // Копирование ссылки на пост (БЕЗ перенаправления!)
   const linkBtn = e.target.closest("[data-copy-link]");
   if (linkBtn) {
     const link = linkBtn.dataset.copyLink;
