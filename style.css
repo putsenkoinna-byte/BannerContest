@@ -274,11 +274,9 @@ h1 {
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.04);
   border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.winner-item.top-1 { background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), transparent); }
-.winner-item.top-2 { background: linear-gradient(90deg, rgba(192, 192, 192, 0.15), transparent); }
-.winner-item.top-3 { background: linear-gradient(90deg, rgba(205, 127, 50, 0.15), transparent); }
-.winner-rank { font-weight: 800; font-size: 18px; width: 30px; text-align: center; }
+.winner-rank { font-weight: 800; font-size: 18px; width: 30px; text-align: center; color: var(--text-secondary); }
 .winner-name { flex: 1; font-weight: 600; }
 .winner-count { font-weight: 700; color: var(--accent-cyan); }
