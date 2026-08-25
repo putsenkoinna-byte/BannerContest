@@ -74,8 +74,9 @@ function getVotesForWork(workId) {
   return votes.filter(vote => vote.fields["Contest Work"]?.includes(workId)).length;
 }
 
-function getEmployeeVotes() {
-  return votes.filter(vote => vote.fields["Voter Name"] === employeeSelect.value).length;
+function getEmployeeVotes(empName = employeeSelect.value) {
+  if (!empName) return 0;
+  return votes.filter(vote => vote.fields["Voter Name"] === empName).length;
 }
 
 function getAuthorVote(username) {
@@ -175,15 +176,16 @@ function renderWorks() {
   });
 }
 
-// ЖЕСТКАЯ ПРОВЕРКА ПОП-АПОВ
+// ПРОВЕРКА ПОП-АПОВ: ПОБЕДИТЕЛИ ТОЛЬКО ЕСЛИ ВСЕ 6 СОТРУДНИКОВ ОТДАЛИ ПО 10 ГОЛОСОВ
 function handleCompletionModal() {
-  const TOTAL_TARGET_VOTES = 60; // 6 сотрудников * 10 голосов = 60 голосов всего
+  // Проверяем, сколько сотрудников отдали РОВНО по 10 голосов
+  const finishedEmployeesCount = employees.filter(empName => getEmployeeVotes(empName) >= 10).length;
 
-  // Победители показываются ИСКЛЮЧИТЕЛЬНО при 60+ записях голосов в базе
-  if (votes.length >= TOTAL_TARGET_VOTES) {
+  // Если ВСЕ 6 сотрудников проголосовали полностью — открываем Победителей
+  if (finishedEmployeesCount >= employees.length) {
     showWinnersModal();
   } else {
-    // В любом другом случае при завершении голосов одним юзером — МЕМНЫЙ ПОП-АП
+    // Во всех остальных случаях (1-й, 2-й... 5-й сотрудник заполнил 10/10) — МЕМНЫЙ поп-ап
     waitModalOverlay.classList.add("active");
   }
 }
@@ -288,7 +290,6 @@ document.addEventListener("click", async e => {
 
   const removing = button.classList.contains("remove");
 
-  // Если пытаемся проголосовать сверх лимита 10 голосов
   if (!removing && getEmployeeVotes() >= 10) {
     handleCompletionModal();
     return;
@@ -317,7 +318,6 @@ document.addEventListener("click", async e => {
   renderWorks();
   updateCounterDisplay();
 
-  // При достижении 10/10 сотрудником — вызываем распределитель поп-апов
   if (getEmployeeVotes() === 10 && !removing) {
     setTimeout(handleCompletionModal, 300);
   }
