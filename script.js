@@ -70,6 +70,7 @@ async function loadWorks() {
     const data = await response.json();
     works = data.records || [];
 
+    // Сортировка: Видео+Описание -> Описание -> Без текста -> Залетные
     works.sort((a, b) => {
       const aFields = a.fields || {};
       const bFields = b.fields || {};
@@ -367,8 +368,7 @@ function showWinnersModal() {
     el.innerHTML = `
       <div class="winner-rank">${index + 1}</div>
       <button class="copy-user-btn" data-copy-user="@${item.author}">
-        <span>@${item.author}</span>
-        <span class="copy-hint">Скопировать ник</span>
+        @${item.author}
       </button>
       <div class="winner-actions">
         <div class="winner-count">❤️ ${item.votes}</div>
