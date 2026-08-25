@@ -23,7 +23,7 @@
 
 <main class="container">
   <section class="employee-box">
-    <label for="employeeSelect">ВЫ КТО ТАКИЕ?</label>
+    <label for="employeeSelect">Кто енто тут у нас?</label>
     <div class="select-wrapper">
       <select id="employeeSelect">
         <option value="">Выбери свое имя из списка...</option>
@@ -58,13 +58,13 @@
   </div>
 </div>
 
-<!-- Поп-ап 2: Промежуточный мемный с интерактивным заживлением -->
+<!-- Поп-ап 2: Промежуточный мемный с интерактивным сюжетом -->
 <div id="waitModalOverlay" class="modal-overlay">
-  <div class="modal-card wait-card">
+  <div class="modal-card wait-card" id="waitCardBox">
     <button type="button" class="modal-close" id="waitModalClose">&times;</button>
     <div class="wait-content">
-      <h2 class="wait-title">Твой голос учтен!</h2>
-      <p class="wait-text">
+      <h2 class="wait-title" id="waitTitle">Твой голос учтен!</h2>
+      <p class="wait-text" id="waitText">
         Чья-то нервная система уже готовится к хейту в чате.<br>
         Да прибудет с вами сила 🫡
       </p>
@@ -76,8 +76,15 @@
 
       <div class="wait-img-wrapper" id="healImgBox">
         <div class="flash-overlay" id="flashOverlay"></div>
-        <img src="hate2.png" alt="Meme" class="wait-img" id="memeImage">
+        <div class="explosion-overlay" id="explosionOverlay"></div>
+        <img src="hate2.jpg" alt="Meme" class="wait-img" id="memeImage">
         <div class="hearts-container" id="heartsContainer"></div>
+      </div>
+
+      <!-- Контейнер для двух Роналду после взрыва -->
+      <div class="ronaldo-grid" id="ronaldoGrid" style="display: none;">
+        <img src="ronaldo1.jpg" alt="Ronaldo 1" class="ronaldo-img">
+        <img src="ronaldo2.jpg" alt="Ronaldo 2" class="ronaldo-img">
       </div>
     </div>
   </div>
@@ -86,6 +93,6 @@
 <!-- Уведомление о копировании -->
 <div id="toast" class="toast">Скопировано!</div>
 
-<script src="script.js?v=6"></script>
+<script src="script.js?v=7"></script>
 </body>
 </html>
