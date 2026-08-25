@@ -217,7 +217,7 @@ h1 {
 .slider-prev { left: 10px; }
 .slider-next { right: 10px; }
 
-/* Виджет счетчика (Выделенный и заметный) */
+/* Виджет счетчика */
 .sticky-counter {
   position: fixed;
   bottom: 30px;
@@ -353,7 +353,6 @@ h1 {
 
 .winner-rank { font-weight: 800; font-size: 16px; width: 24px; text-align: center; color: var(--text-secondary); }
 
-/* Явные кнопки для копирования */
 .copy-user-btn {
   display: flex;
   align-items: center;
@@ -408,21 +407,44 @@ h1 {
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
 }
 
-.wait-card { text-align: center; padding: 32px 28px; }
+/* Модалка ожидания (мем) */
+.wait-card {
+  text-align: center;
+  padding: 36px 28px 24px;
+}
+
+.wait-title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 10px 0;
+  color: #fff;
+}
+
+.wait-text {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0 0 24px 0;
+}
 
 .wait-img-wrapper {
   width: 100%;
   max-width: 320px;
-  margin: 0 auto 20px;
-  border-radius: 18px;
-  overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-  border: 1px solid rgba(255,255,255,0.1);
+  margin: 0 auto;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+  border: none;
+  background: transparent;
 }
 
-.wait-img { width: 100%; height: auto; display: block; object-fit: cover; }
-.wait-title { font-size: 24px; font-weight: 800; margin: 0 0 10px 0; color: #fff; }
-.wait-text { font-size: 15px; line-height: 1.5; color: var(--text-secondary); margin: 0; }
+.wait-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+}
 
 .toast {
   position: fixed;
