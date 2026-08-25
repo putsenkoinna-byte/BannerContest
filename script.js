@@ -501,6 +501,7 @@ document.addEventListener("click", async e => {
     setTimeout(() => { voteAnimBadge.className = "vote-anim-badge"; }, 800);
   }
 
+  // Оптимистичное обновление интерфейса для мгновенного отклика
   if (removing) {
     votes = votes.filter(vote =>
       !(vote.fields["Voter Name"] === voterName && vote.fields["Contest Work"]?.includes(contestWork))
@@ -522,15 +523,24 @@ document.addEventListener("click", async e => {
     setTimeout(handleCompletionModal, 300);
   }
 
-  await fetch("/api/vote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      voterName,
-      contestWork,
-      action: removing ? "delete" : "add"
-    })
-  });
+  // Отправка на сервер и полная синхронизация с таблицей
+  try {
+    await fetch("/api/vote", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        voterName,
+        contestWork,
+        action: removing ? "delete" : "add"
+      })
+    });
+    
+    // Подтягиваем точные данные из базы данных, чтобы всё совпадало на 100%
+    await loadVotes();
+    updateUIAfterVote();
+  } catch (err) {
+    console.error("Ошибка сохранения голоса:", err);
+  }
 });
 
 function updateCounterDisplay() {
