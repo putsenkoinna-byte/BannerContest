@@ -223,7 +223,7 @@ if (healImgBox) {
 
       setTimeout(() => {
         // Замена изображения на довольных девочек по пивку
-        memeImage.src = "heal.png";
+        memeImage.src = "heal.jpg";
         
         // Обновление надписи и скрытие стрелки
         const hintBox = document.getElementById("healHintBox");
