@@ -44,7 +44,6 @@ select {
   margin-bottom: 24px;
 }
 
-/* Сетка карточек на ПК */
 #works {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -163,7 +162,6 @@ select {
   font-size: 18px;
 }
 
-/* Слайдер для медиа */
 .slider {
   position: relative;
   width: 100%;
@@ -202,7 +200,6 @@ select {
 .slider-prev { left: 10px; }
 .slider-next { right: 10px; }
 
-/* Счетчики и бабблы */
 .sticky-counter {
   position: fixed;
   bottom: 16px;
@@ -241,7 +238,7 @@ select {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ИДЕАЛЬНЫЙ ПОП-АП С ПОДЛОЖКОЙ КАК НА ЭТАЛОНЕ (И ДЛЯ ПК, И ДЛЯ ТЕЛЕФОНОВ) */
+/* ФИНАЛЬНЫЙ ЖЕСТКИЙ ФИКС ПОП-АПА, ЗАТЕМНЕНИЯ И КУБКА */
 .modal-overlay {
   position: fixed !important;
   top: 0 !important;
@@ -279,16 +276,21 @@ select {
   box-sizing: border-box !important;
   position: relative !important;
   margin: auto !important;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.9) !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.95) !important;
   text-align: center !important;
 }
 
-/* Аккуратный размер кубка внутри карточки поп-апа */
-.modal-content img {
+/* СЖИМАЕМ ЭТОТ ЕБУЧИЙ КУБОК ВНУТРИ ПОП-АПА ДО 64 ПИКСЕЛЕЙ */
+.modal-content img,
+.modal-overlay img,
+.modal-content svg,
+.modal-overlay svg {
   width: 64px !important;
   height: 64px !important;
   max-width: 64px !important;
   max-height: 64px !important;
+  min-width: 64px !important;
+  min-height: 64px !important;
   margin: 0 auto 16px auto !important;
   display: block !important;
   object-fit: contain !important;
@@ -330,6 +332,12 @@ select {
 
 .copy-user-btn:hover {
   color: #818cf8;
+}
+
+.winner-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .copy-post-btn {
