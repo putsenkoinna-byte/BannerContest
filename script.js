@@ -178,14 +178,11 @@ function renderWorks() {
 
 // ПРОВЕРКА ПОП-АПОВ: ПОБЕДИТЕЛИ ТОЛЬКО ЕСЛИ ВСЕ 6 СОТРУДНИКОВ ОТДАЛИ ПО 10 ГОЛОСОВ
 function handleCompletionModal() {
-  // Проверяем, сколько сотрудников отдали РОВНО по 10 голосов
   const finishedEmployeesCount = employees.filter(empName => getEmployeeVotes(empName) >= 10).length;
 
-  // Если ВСЕ 6 сотрудников проголосовали полностью — открываем Победителей
   if (finishedEmployeesCount >= employees.length) {
     showWinnersModal();
   } else {
-    // Во всех остальных случаях (1-й, 2-й... 5-й сотрудник заполнил 10/10) — МЕМНЫЙ поп-ап
     waitModalOverlay.classList.add("active");
   }
 }
@@ -343,7 +340,7 @@ function updateCounterDisplay() {
     if (stickyCounterText) stickyCounterText.innerHTML = `Осталось голосов: <span>${remaining}</span>`;
     if (stickyCounter) stickyCounter.classList.add("visible");
   } else {
-    if (counter) counter.textContent = `Выберите имя, чтобы начать голосование`;
+    if (counter) counter.textContent = ""; // скрываем надпись под селектом в исходном состоянии
     if (stickyCounter) stickyCounter.classList.remove("visible");
   }
 }
