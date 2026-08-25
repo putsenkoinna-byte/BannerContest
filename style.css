@@ -220,7 +220,7 @@ select {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Модальные окна (базовые стили) */
+/* ИСПРАВЛЕННЫЙ ПОП-АП (И СТАТЬИ, И МОБИЛКИ) */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -235,6 +235,9 @@ select {
   pointer-events: none;
   transition: opacity 0.3s ease;
   z-index: 999;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
 }
 
 .modal-overlay.active {
@@ -246,16 +249,28 @@ select {
   background-color: #161822;
   border: 1px solid #2e3248;
   border-radius: 20px;
-  padding: 24px;
-  width: 90%;
-  max-width: 480px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 440px;
   box-sizing: border-box;
-  max-height: 85vh;
+  max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  text-align: center;
 }
 
-/* Элементы списка победителей (аккуратный вид без сердечек) */
+/* Строгий фикс размера кубка внутри поп-апа, чтобы не разрывал экран */
+.modal-content img {
+  max-width: 70px !important;
+  max-height: 70px !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 auto 12px auto !important;
+  display: block !important;
+  object-fit: contain !important;
+}
+
+/* Элементы списка победителей */
 .winner-item {
   display: flex;
   align-items: center;
@@ -263,27 +278,31 @@ select {
   background: #1f2233;
   padding: 10px 14px;
   border-radius: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   gap: 10px;
+  text-align: left;
 }
 
 .winner-rank {
   font-weight: bold;
-  font-size: 16px;
+  font-size: 15px;
   color: #818cf8;
-  min-width: 24px;
+  min-width: 20px;
 }
 
 .copy-user-btn {
   flex: 1;
-  text-align: left;
   background: transparent;
   color: #ffffff;
   border: none;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  text-align: left;
   padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .copy-user-btn:hover {
@@ -294,10 +313,11 @@ select {
   background-color: #2e3248;
   color: white;
   border: none;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
+  white-space: nowrap;
   transition: background 0.2s;
 }
 
