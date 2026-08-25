@@ -175,14 +175,14 @@ function renderWorks() {
   });
 }
 
-// Показ поп-апа строго по условию общего количества голосов в системе (60 штук)
+// ЕДИНАЯ И СТРОГАЯ ЛОГИКА ПОП-АПОВ:
 function handleCompletionModal() {
-  const TOTAL_REQUIRED_VOTES = 60; // 6 сотрудников * 10 голосов
+  const TOTAL_TARGET = employees.length * 10; // Ровно 60 голосов от всех 6 человек
 
-  if (votes.length >= TOTAL_REQUIRED_VOTES) {
-    showWinnersModal();
+  if (votes.length >= TOTAL_TARGET) {
+    showWinnersModal(); // Показываем победителей ТОЛЬКО когда в базе 60+ голосов
   } else {
-    waitModalOverlay.classList.add("active");
+    waitModalOverlay.classList.add("active"); // Во всех остальных случаях — МЕМ!
   }
 }
 
@@ -286,6 +286,7 @@ document.addEventListener("click", async e => {
 
   const removing = button.classList.contains("remove");
 
+  // Если у сотрудника уже 10 голосов и он пытается нажать еще
   if (!removing && getEmployeeVotes() >= 10) {
     handleCompletionModal();
     return;
@@ -314,8 +315,8 @@ document.addEventListener("click", async e => {
   renderWorks();
   updateCounterDisplay();
 
-  // Если сотрудник только что проставил свой 10-й голос
-  if (getEmployeeVotes() === 10) {
+  // Показываем поп-ап, когда пользователь доходит до 10/10
+  if (getEmployeeVotes() === 10 && !removing) {
     setTimeout(handleCompletionModal, 300);
   }
 
@@ -348,9 +349,6 @@ function updateCounterDisplay() {
 employeeSelect.addEventListener("change", () => {
   renderWorks();
   updateCounterDisplay();
-  if (employeeSelect.value && getEmployeeVotes() === 10) {
-    handleCompletionModal();
-  }
 });
 
 if (modalClose) {
