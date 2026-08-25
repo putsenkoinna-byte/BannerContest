@@ -397,19 +397,19 @@ function createHeartsEffect() {
   }
 }
 
-// Принудительный вывод победителей по твоему реальному списку из Airtable
+// Принудительный вывод победителей с правильными никами
 window.showWinnersModal = function() {
   const top10 = [
-    { postLink: "https://t.me/qq1win/5273481", votes: 5 },
-    { postLink: "https://t.me/qq1win/5273675", votes: 4 },
-    { postLink: "https://t.me/qq1win/5272129", votes: 3 },
-    { postLink: "https://t.me/qq1win/5271739", votes: 3 },
-    { postLink: "https://t.me/qq1win/5272269", votes: 3 },
-    { postLink: "https://t.me/qq1win/5272883", votes: 3 },
-    { postLink: "https://t.me/qq1win/5273144", votes: 3 },
-    { postLink: "https://t.me/qq1win/5274743", votes: 3 },
-    { postLink: "https://t.me/qq1win/5274744", votes: 2 },
-    { postLink: "https://t.me/qq1win/5272919", votes: 2 }
+    { author: "BladeTag", postLink: "https://t.me/qq1win/5273481", votes: 5 },
+    { author: "s3x1r", postLink: "https://t.me/qq1win/5273675", votes: 4 },
+    { author: "Jeka_23", postLink: "https://t.me/qq1win/5274743", votes: 4 },
+    { author: "Felice_Kr", postLink: "https://t.me/qq1win/5271739", votes: 3 },
+    { author: "snchzs887", postLink: "https://t.me/qq1win/5272129", votes: 3 },
+    { author: "kkaaaooo", postLink: "https://t.me/qq1win/5272269", votes: 3 },
+    { author: "RussianTelevisionTV", postLink: "https://t.me/qq1win/5272883", votes: 3 },
+    { author: "timmimimmi", postLink: "https://t.me/qq1win/5273144", votes: 3 },
+    { author: "Lev_Borisovv", postLink: "https://t.me/qq1win/5274744", votes: 3 },
+    { author: "kksskkl", postLink: "https://t.me/qq1win/5271902", votes: 2 }
   ];
 
   winnersList.innerHTML = "";
@@ -419,8 +419,8 @@ window.showWinnersModal = function() {
     el.className = "winner-item";
     el.innerHTML = `
       <div class="winner-rank">${index + 1}</div>
-      <button class="copy-user-btn" data-copy-user="${item.postLink}">
-        Пост #${item.postLink.split('/').pop()}
+      <button class="copy-user-btn" data-copy-user="@${item.author}">
+        @${item.author}
       </button>
       <div class="winner-actions">
         <div class="winner-count">❤️ ${item.votes}</div>
@@ -446,9 +446,9 @@ window.addEventListener("hashchange", checkHashUrl);
 document.addEventListener("click", async e => {
   const userBtn = e.target.closest("[data-copy-user]");
   if (userBtn) {
-    const link = userBtn.dataset.copyUser;
-    navigator.clipboard.writeText(link);
-    showToast(`Ссылка скопирована!`);
+    const username = userBtn.dataset.copyUser;
+    navigator.clipboard.writeText(username);
+    showToast(`Ник ${username} скопирован!`);
     return;
   }
 
