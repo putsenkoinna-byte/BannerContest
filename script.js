@@ -9,9 +9,18 @@ const employees = [
 
 const employeeSelect = document.getElementById("employeeSelect");
 const worksContainer = document.getElementById("works");
+
 const modalOverlay = document.getElementById("modalOverlay");
 const modalClose = document.getElementById("modalClose");
 const winnersList = document.getElementById("winnersList");
+
+const waitModalOverlay = document.getElementById("waitModalOverlay");
+const waitModalClose = document.getElementById("waitModalClose");
+
+const stickyCounter = document.getElementById("stickyCounter");
+const stickyCounterText = document.getElementById("stickyCounterText");
+const voteAnimBadge = document.getElementById("voteAnimBadge");
+const toast = document.getElementById("toast");
 
 let votes = [];
 let works = [];
@@ -22,6 +31,13 @@ employees.forEach(name => {
   option.textContent = name;
   employeeSelect.appendChild(option);
 });
+
+function showToast(text) {
+  if (!toast) return;
+  toast.textContent = text;
+  toast.classList.add("active");
+  setTimeout(() => toast.classList.remove("active"), 2000);
+}
 
 async function loadVotes() {
   try {
@@ -48,6 +64,7 @@ async function loadWorks() {
     });
 
     renderWorks();
+    checkHashUrl();
   } catch (err) {
     console.error("Ошибка загрузки работ:", err);
   }
@@ -158,12 +175,23 @@ function renderWorks() {
   });
 }
 
+function handleCompletionModal() {
+  const maxPossibleVotes = employees.length * 10;
+  
+  if (votes.length >= maxPossibleVotes) {
+    showWinnersModal();
+  } else {
+    waitModalOverlay.classList.add("active");
+  }
+}
+
 function showWinnersModal() {
   const stats = works.map(w => {
     const cleanUser = String(w.fields.Username || "Аноним").replace(/^@+/, '');
     return {
       id: w.id,
       author: cleanUser,
+      postLink: w.fields["Ссылка на пост"] || "",
       votes: getVotesForWork(w.id)
     };
   });
@@ -178,8 +206,17 @@ function showWinnersModal() {
     el.className = "winner-item";
     el.innerHTML = `
       <div class="winner-rank">${index + 1}</div>
-      <div class="winner-name">@${item.author}</div>
-      <div class="winner-count">❤️ ${item.votes}</div>
+      <button class="winner-name-btn" data-copy-user="@${item.author}" title="Нажмите, чтобы скопировать">
+        @${item.author} <span class="copy-icon">📋</span>
+      </button>
+      <div class="winner-actions">
+        <div class="winner-count">❤️ ${item.votes}</div>
+        ${item.postLink ? `
+          <button class="copy-post-btn" data-copy-link="${item.postLink}">
+            🔗 Пост
+          </button>
+        ` : ''}
+      </div>
     `;
     winnersList.appendChild(el);
   });
@@ -187,7 +224,29 @@ function showWinnersModal() {
   modalOverlay.classList.add("active");
 }
 
+function checkHashUrl() {
+  if (window.location.hash === "#winners") {
+    showWinnersModal();
+  }
+}
+
+window.addEventListener("hashchange", checkHashUrl);
+
 document.addEventListener("click", async e => {
+  if (e.target.closest("[data-copy-user]")) {
+    const username = e.target.closest("[data-copy-user]").dataset.copyUser;
+    navigator.clipboard.writeText(username);
+    showToast(`Юзернейм ${username} скопирован!`);
+    return;
+  }
+
+  if (e.target.closest("[data-copy-link]")) {
+    const link = e.target.closest("[data-copy-link]").dataset.copyLink;
+    navigator.clipboard.writeText(link);
+    showToast("Ссылка на пост скопирована!");
+    return;
+  }
+
   if (e.target.classList.contains("text-toggle-btn")) {
     const btn = e.target;
     const textBlock = btn.previousElementSibling;
@@ -224,8 +283,15 @@ document.addEventListener("click", async e => {
   const removing = button.classList.contains("remove");
 
   if (!removing && getEmployeeVotes() >= 10) {
-    showWinnersModal();
+    handleCompletionModal();
     return;
+  }
+
+  // Запуск вылетающей анимации при клике
+  if (voteAnimBadge) {
+    voteAnimBadge.textContent = removing ? "+1" : "-1";
+    voteAnimBadge.className = `vote-anim-badge ${removing ? "anim-remove" : "anim-add"}`;
+    setTimeout(() => { voteAnimBadge.className = "vote-anim-badge"; }, 800);
   }
 
   if (removing) {
@@ -246,7 +312,7 @@ document.addEventListener("click", async e => {
   updateCounterDisplay();
 
   if (getEmployeeVotes() === 10) {
-    setTimeout(showWinnersModal, 300);
+    setTimeout(handleCompletionModal, 300);
   }
 
   await fetch("/api/vote", {
@@ -262,13 +328,16 @@ document.addEventListener("click", async e => {
 
 function updateCounterDisplay() {
   const counter = document.getElementById("votesLeft");
-  if (!counter) return;
+  const usedVotes = getEmployeeVotes();
+  const remaining = 10 - usedVotes;
 
-  const currentCount = getEmployeeVotes();
   if (employeeSelect.value) {
-    counter.textContent = `Ваши голоса: ${currentCount}/10`;
+    if (counter) counter.textContent = `Ваши голоса: ${usedVotes}/10`;
+    if (stickyCounterText) stickyCounterText.innerHTML = `Осталось голосов: <span>${remaining}</span>`;
+    if (stickyCounter) stickyCounter.classList.add("visible");
   } else {
-    counter.textContent = `Выберите имя, чтобы начать голосование`;
+    if (counter) counter.textContent = `Выберите имя, чтобы начать голосование`;
+    if (stickyCounter) stickyCounter.classList.remove("visible");
   }
 }
 
@@ -276,7 +345,7 @@ employeeSelect.addEventListener("change", () => {
   renderWorks();
   updateCounterDisplay();
   if (employeeSelect.value && getEmployeeVotes() === 10) {
-    showWinnersModal();
+    handleCompletionModal();
   }
 });
 
@@ -286,6 +355,15 @@ if (modalClose) {
 if (modalOverlay) {
   modalOverlay.addEventListener("click", (e) => {
     if (e.target === modalOverlay) modalOverlay.classList.remove("active");
+  });
+}
+
+if (waitModalClose) {
+  waitModalClose.addEventListener("click", () => waitModalOverlay.classList.remove("active"));
+}
+if (waitModalOverlay) {
+  waitModalOverlay.addEventListener("click", (e) => {
+    if (e.target === waitModalOverlay) waitModalOverlay.classList.remove("active");
   });
 }
 
