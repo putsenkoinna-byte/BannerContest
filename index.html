@@ -3,28 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>#StickerDrop</title>
+  <title>1win Community Contest 🤘</title>
   <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<header>
-  <h1>#StickerDrop</h1>
+<div class="bg-glow"></div>
+<div class="bg-pattern"></div>
+
+<header class="header">
+  <div class="logo-group">
+    <div class="brand-badge">1win</div>
+    <div>
+      <h1>1win Community 🤘</h1>
+      <div class="subtitle">Конкурс стикеров & медиа в чате</div>
+    </div>
+  </div>
 </header>
 
-<section class="employee-box">
-  <label>Выберите свое имя для голосования</label>
-  <select id="employeeSelect">
-    <option value="">Выберите свое имя для голосования</option>
-  </select>
+<main class="container">
+  <section class="employee-box">
+    <label for="employeeSelect">Кто сейчас голосует?</label>
+    <div class="select-wrapper">
+      <select id="employeeSelect">
+        <option value="">Выберите свое имя из списка...</option>
+      </select>
+    </div>
+    <div id="votesLeft" class="votes-counter">Выберите имя, чтобы начать голосование</div>
+  </section>
 
-  <div id="votesLeft"></div>
-</section>
+  <section id="works" class="works-grid"></section>
+</main>
 
-<section id="works" class="works-grid"></section>
+<div id="modalOverlay" class="modal-overlay">
+  <div class="modal-card">
+    <button type="button" class="modal-close" id="modalClose">&times;</button>
+    <div class="modal-header">
+      <div class="modal-emoji">🏆</div>
+      <h2 class="modal-title">А вот и наши победители<br><span class="modal-subtitle">(Блин, снова не из Индии 😭)</span></h2>
+      <div id="modalStatusBadge" class="status-badge">Промежуточные результаты</div>
+    </div>
+    <div id="winnersList" class="winners-list"></div>
+  </div>
+</div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
