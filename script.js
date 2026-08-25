@@ -35,12 +35,17 @@ const waitText = document.getElementById("waitText");
 let clickStage = 0;
 let subClickCount = 0;
 
-employees.forEach(name => {
-  const option = document.createElement("option");
-  option.value = name;
-  option.textContent = name;
-  employeeSelect.appendChild(option);
-});
+let votes = [];
+let works = [];
+
+if (employeeSelect) {
+  employees.forEach(name => {
+    const option = document.createElement("option");
+    option.value = name;
+    option.textContent = name;
+    employeeSelect.appendChild(option);
+  });
+}
 
 function getEmployeeMaxVotes(empName) {
   if (empName === "Вика") return 7;
@@ -99,9 +104,6 @@ async function loadWorks() {
     console.error("Ошибка загрузки работ:", err);
   }
 }
-
-let votes = [];
-let works = [];
 
 function getVotesForWork(workId) {
   return votes.filter(vote => {
@@ -166,6 +168,7 @@ function renderMedia(files) {
 }
 
 function renderWorks() {
+  if (!worksContainer) return;
   worksContainer.innerHTML = "";
 
   works.forEach(record => {
@@ -289,6 +292,7 @@ function handleCompletionModal() {
   }
 }
 
+// ВОЗВРАЩЕНЫ КЛИКИ ПО МЕМАМ И ХИЛУ
 function triggerClickFeedback(isWarning = false) {
   if (!healImgBox) return;
   healImgBox.classList.remove("click-shake");
@@ -427,7 +431,7 @@ function createHeartsEffect() {
   }
 }
 
-// Поп-ап победителей без сердечек и с идеальной мобильной адаптацией
+// ПОП-АП ПОБЕДИТЕЛЕЙ (БЕЗ СЕРДЕЧЕК)
 window.showWinnersModal = function() {
   const top10 = [
     { author: "BladeTag", postLink: "https://t.me/qq1win/5273481" },
@@ -442,26 +446,30 @@ window.showWinnersModal = function() {
     { author: "kksskkl", postLink: "https://t.me/qq1win/5271902" }
   ];
 
-  winnersList.innerHTML = "";
+  if (winnersList) {
+    winnersList.innerHTML = "";
 
-  top10.forEach((item, index) => {
-    const el = document.createElement("div");
-    el.className = "winner-item";
-    el.innerHTML = `
-      <div class="winner-rank">${index + 1}</div>
-      <button class="copy-user-btn" data-copy-user="@${item.author}">
-        @${item.author}
-      </button>
-      <div class="winner-actions">
-        <button class="copy-post-btn" data-copy-link="${item.postLink}">
-          🔗 Ссылка
+    top10.forEach((item, index) => {
+      const el = document.createElement("div");
+      el.className = "winner-item";
+      el.innerHTML = `
+        <div class="winner-rank">${index + 1}</div>
+        <button class="copy-user-btn" data-copy-user="@${item.author}">
+          @${item.author}
         </button>
-      </div>
-    `;
-    winnersList.appendChild(el);
-  });
+        <div class="winner-actions">
+          <button class="copy-post-btn" data-copy-link="${item.postLink}">
+            🔗 Ссылка
+          </button>
+        </div>
+      `;
+      winnersList.appendChild(el);
+    });
+  }
 
-  modalOverlay.classList.add("active");
+  if (modalOverlay) {
+    modalOverlay.classList.add("active");
+  }
 };
 
 function checkHashUrl() {
@@ -598,10 +606,12 @@ function updateCounterDisplay() {
   }
 }
 
-employeeSelect.addEventListener("change", () => {
-  renderWorks();
-  updateCounterDisplay();
-});
+if (employeeSelect) {
+  employeeSelect.addEventListener("change", () => {
+    renderWorks();
+    updateCounterDisplay();
+  });
+}
 
 if (modalClose) {
   modalClose.addEventListener("click", () => modalOverlay.classList.remove("active"));
