@@ -35,10 +35,6 @@ const waitText = document.getElementById("waitText");
 let clickStage = 0;
 let subClickCount = 0;
 
-let votes = [];
-let works = [];
-
-// Заполняем выпадающий список именами
 employees.forEach(name => {
   const option = document.createElement("option");
   option.value = name;
@@ -46,7 +42,6 @@ employees.forEach(name => {
   employeeSelect.appendChild(option);
 });
 
-// Персональные лимиты голосов (Вика — 7, Андрей — 6, остальные — 10)
 function getEmployeeMaxVotes(empName) {
   if (empName === "Вика") return 7;
   if (empName === "Андрей") return 6;
@@ -104,6 +99,9 @@ async function loadWorks() {
     console.error("Ошибка загрузки работ:", err);
   }
 }
+
+let votes = [];
+let works = [];
 
 function getVotesForWork(workId) {
   return votes.filter(vote => {
@@ -291,47 +289,79 @@ function handleCompletionModal() {
   }
 }
 
+function triggerClickFeedback(isWarning = false) {
+  if (!healImgBox) return;
+  healImgBox.classList.remove("click-shake");
+  void healImgBox.offsetWidth;
+  healImgBox.classList.add("click-shake");
+  createMiniPopEffect(isWarning);
+}
+
+function createMiniPopEffect(isWarning) {
+  if (!heartsContainer) return;
+  const emojis = isWarning ? ["💥", "💢", "⚠️", "❌", "🔥"] : ["✨", "💖", "🍻", "⚡", "💅"];
+
+  for (let i = 0; i < 5; i++) {
+    const el = document.createElement("div");
+    el.className = "floating-heart";
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = `${40 + (Math.random() * 20 - 10)}%`;
+    el.style.top = `${30 + (Math.random() * 20 - 10)}%`;
+    el.style.animationDuration = `${0.8 + Math.random() * 0.5}s`;
+    heartsContainer.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  }
+}
+
 if (healImgBox) {
   healImgBox.addEventListener("click", () => {
     subClickCount++;
 
-    if (clickStage === 0 && subClickCount >= 3) {
-      clickStage = 1;
-      subClickCount = 0;
+    if (clickStage === 0) {
+      triggerClickFeedback(false);
+      if (subClickCount >= 3) {
+        clickStage = 1;
+        subClickCount = 0;
 
-      healImgBox.classList.add("magic-transition");
-      flashOverlay.classList.add("active");
+        healImgBox.classList.add("magic-transition");
+        flashOverlay.classList.add("active");
 
-      setTimeout(() => {
-        memeImage.src = "heal.jpg";
-        if (healHintBox) {
-          healHintBox.innerHTML = `<span>Спасибо 💖🍻</span>`;
-          healHintBox.className = "heal-hint-box healed";
-        }
-      }, 350);
+        setTimeout(() => {
+          memeImage.src = "heal.jpg";
+          if (healHintBox) {
+            healHintBox.innerHTML = `<span>Спасибо 💖🍻</span>`;
+            healHintBox.className = "heal-hint-box healed";
+          }
+        }, 350);
 
-      setTimeout(() => {
-        flashOverlay.classList.remove("active");
-        healImgBox.classList.remove("magic-transition");
-      }, 700);
+        setTimeout(() => {
+          flashOverlay.classList.remove("active");
+          healImgBox.classList.remove("magic-transition");
+        }, 700);
 
-      createHeartsEffect();
+        createHeartsEffect();
+        return;
+      }
       return;
     }
 
-    if (clickStage === 1 && subClickCount >= 3) {
-      clickStage = 2;
-      subClickCount = 0;
+    if (clickStage === 1) {
+      triggerClickFeedback(true);
+      if (subClickCount >= 3) {
+        clickStage = 2;
+        subClickCount = 0;
 
-      memeImage.src = "barbie.jpg";
-      if (healHintBox) {
-        healHintBox.innerHTML = `<span>Ты что наделал? 🥲💣</span>`;
-        healHintBox.className = "heal-hint-box warning";
+        memeImage.src = "barbie.jpg";
+        if (healHintBox) {
+          healHintBox.innerHTML = `<span>Ты что наделал? 🥲💣</span>`;
+          healHintBox.className = "heal-hint-box warning";
+        }
+
+        setTimeout(() => {
+          triggerExplosionAndUNO();
+        }, 1300);
       }
-
-      setTimeout(() => {
-        triggerExplosionAndUNO();
-      }, 1300);
+      return;
     }
   });
 }
@@ -397,19 +427,19 @@ function createHeartsEffect() {
   }
 }
 
-// Принудительный вывод победителей с правильными никами
+// Поп-ап победителей без сердечек и с идеальной мобильной адаптацией
 window.showWinnersModal = function() {
   const top10 = [
-    { author: "BladeTag", postLink: "https://t.me/qq1win/5273481", votes: 5 },
-    { author: "s3x1r", postLink: "https://t.me/qq1win/5273675", votes: 4 },
-    { author: "Jeka_23", postLink: "https://t.me/qq1win/5274743", votes: 4 },
-    { author: "Felice_Kr", postLink: "https://t.me/qq1win/5271739", votes: 3 },
-    { author: "snchzs887", postLink: "https://t.me/qq1win/5272129", votes: 3 },
-    { author: "kkaaaooo", postLink: "https://t.me/qq1win/5272269", votes: 3 },
-    { author: "RussianTelevisionTV", postLink: "https://t.me/qq1win/5272883", votes: 3 },
-    { author: "timmimimmi", postLink: "https://t.me/qq1win/5273144", votes: 3 },
-    { author: "Lev_Borisovv", postLink: "https://t.me/qq1win/5274744", votes: 3 },
-    { author: "kksskkl", postLink: "https://t.me/qq1win/5271902", votes: 2 }
+    { author: "BladeTag", postLink: "https://t.me/qq1win/5273481" },
+    { author: "s3x1r", postLink: "https://t.me/qq1win/5273675" },
+    { author: "Jeka_23", postLink: "https://t.me/qq1win/5274743" },
+    { author: "Felice_Kr", postLink: "https://t.me/qq1win/5271739" },
+    { author: "snchzs887", postLink: "https://t.me/qq1win/5272129" },
+    { author: "kkaaaooo", postLink: "https://t.me/qq1win/5272269" },
+    { author: "RussianTelevisionTV", postLink: "https://t.me/qq1win/5272883" },
+    { author: "timmimimmi", postLink: "https://t.me/qq1win/5273144" },
+    { author: "Lev_Borisovv", postLink: "https://t.me/qq1win/5274744" },
+    { author: "kksskkl", postLink: "https://t.me/qq1win/5271902" }
   ];
 
   winnersList.innerHTML = "";
@@ -423,9 +453,8 @@ window.showWinnersModal = function() {
         @${item.author}
       </button>
       <div class="winner-actions">
-        <div class="winner-count">❤️ ${item.votes}</div>
         <button class="copy-post-btn" data-copy-link="${item.postLink}">
-          🔗 Скопировать ссылку
+          🔗 Ссылка
         </button>
       </div>
     `;
