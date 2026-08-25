@@ -410,13 +410,13 @@ h1 {
 /* Модалка ожидания (мем) */
 .wait-card {
   text-align: center;
-  padding: 36px 28px 24px;
+  padding: 32px 24px 28px;
 }
 
 .wait-title {
   font-size: 26px;
   font-weight: 800;
-  margin: 0 0 10px 0;
+  margin: 0 0 8px 0;
   color: #fff;
 }
 
@@ -424,26 +424,118 @@ h1 {
   font-size: 15px;
   line-height: 1.5;
   color: var(--text-secondary);
-  margin: 0 0 24px 0;
+  margin: 0 0 16px 0;
+}
+
+.heal-hint-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  color: var(--accent-cyan);
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.3s ease;
+}
+
+.hint-arrow {
+  font-size: 20px;
+  animation: bounceArrow 1.2s infinite ease-in-out;
+}
+
+@keyframes bounceArrow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
+.heal-hint-box.healed {
+  color: #ff4757;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.heal-hint-box.healed .hint-arrow {
+  display: none;
 }
 
 .wait-img-wrapper {
+  position: relative;
   width: 100%;
   max-width: 320px;
   margin: 0 auto;
-  border-radius: 0;
-  overflow: visible;
-  box-shadow: none;
-  border: none;
-  background: transparent;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .wait-img {
   width: 100%;
   height: auto;
   display: block;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+  border-radius: 20px;
+  object-fit: cover;
+  transition: transform 0.2s ease;
+}
+
+.wait-img-wrapper:active .wait-img {
+  transform: scale(0.97);
+}
+
+/* Вспышка заживления */
+.flash-overlay {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  border-radius: 20px;
+}
+
+.flash-overlay.active {
+  animation: flashAnim 0.5s ease-out forwards;
+}
+
+@keyframes flashAnim {
+  0% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* Анимированные сердечки */
+.hearts-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.floating-heart {
+  position: absolute;
+  bottom: 0;
+  font-size: 24px;
+  animation: floatHeart 1.5s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes floatHeart {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-250px) scale(1.4) rotate(20deg);
+  }
 }
 
 .toast {
