@@ -225,7 +225,7 @@ select {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ПОП-АП ПОБЕДИТЕЛЕЙ */
+/* ЕБУЧИЙ ПОП-АП ПОБЕДИТЕЛЕЙ (ФИКС ВСЕГО ХАОСА) */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -239,7 +239,7 @@ select {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
-  z-index: 999;
+  z-index: 9999;
   padding: 16px;
   box-sizing: border-box;
   overflow-y: auto;
@@ -256,22 +256,21 @@ select {
   border-radius: 20px;
   padding: 24px 20px;
   width: 100%;
-  max-width: 460px;
+  max-width: 480px;
   box-sizing: border-box;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
+  text-align: center;
 }
 
-/* ЖЕСТКИЙ ФИКС ЛЮБЫХ КАРТИНОК И ЭЛЕМЕНТОВ В ШАПКЕ ПОП-АПА (УБИРАЕТ ОГРОМНЫЙ КУБОК) */
-.modal-content > img,
-.modal-content svg,
-.modal-content div:first-child img {
-  max-width: 60px !important;
-  max-height: 60px !important;
-  width: 60px !important;
-  height: 60px !important;
-  margin: 0 auto 12px auto !important;
+/* Гарантированно глушим гигантскую картинку/кубок, если она лезет из HTML */
+.modal-content img {
+  max-width: 50px !important;
+  max-height: 50px !important;
+  width: 50px !important;
+  height: 50px !important;
+  margin: 0 auto 10px auto !important;
   display: block !important;
   object-fit: contain !important;
 }
@@ -285,6 +284,7 @@ select {
   border-radius: 12px;
   margin-bottom: 8px;
   gap: 10px;
+  text-align: left;
 }
 
 .winner-rank {
