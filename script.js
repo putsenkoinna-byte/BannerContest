@@ -125,7 +125,6 @@ function hasCurrentWorkVote(workId) {
   );
 }
 
-// Оптимизировано: добавлен loading="lazy" и preload="metadata"
 function renderMedia(files) {
   if (!files || !files.length) return "";
 
@@ -153,6 +152,7 @@ function renderMedia(files) {
   `;
 }
 
+// Полный рендеринг (при первой загрузке или смене пользователя)
 function renderWorks() {
   worksContainer.innerHTML = "";
 
@@ -167,6 +167,7 @@ function renderWorks() {
 
     const card = document.createElement("div");
     card.className = "card";
+    card.dataset.workId = record.id; // Сохраняем ID работы для точечного обновления
 
     card.innerHTML = `
       ${renderMedia(fields["Конкурсные работы"])}
@@ -203,6 +204,46 @@ function renderWorks() {
 
     worksContainer.appendChild(card);
   });
+}
+
+// Точечное обновление интерфейса без пересоздания карточек и сброса картинок
+function updateUIAfterVote() {
+  const currentVoter = employeeSelect.value;
+
+  works.forEach(record => {
+    const card = worksContainer.querySelector(`[data-work-id="${record.id}"]`);
+    if (!card) return;
+
+    const votesBadge = card.querySelector(".votes-badge");
+    const voteButton = card.querySelector(".vote-button");
+
+    // Обновляем счетчик лайков
+    if (votesBadge) {
+      votesBadge.textContent = `❤️ ${getVotesForWork(record.id)}`;
+    }
+
+    // Обновляем состояние кнопки голосования
+    if (voteButton) {
+      const authorVote = getAuthorVote(record.fields.Username);
+      const currentWorkVote = hasCurrentWorkVote(record.id);
+
+      if (currentWorkVote) {
+        voteButton.className = "vote-button remove";
+        voteButton.textContent = "Убрать голос";
+        voteButton.disabled = false;
+      } else if (authorVote) {
+        voteButton.className = "vote-button";
+        voteButton.textContent = "За автора уже отдано";
+        voteButton.disabled = true;
+      } else {
+        voteButton.className = "vote-button";
+        voteButton.textContent = "Голосовать";
+        voteButton.disabled = !currentVoter;
+      }
+    }
+  });
+
+  updateCounterDisplay();
 }
 
 function handleCompletionModal() {
@@ -436,9 +477,6 @@ document.addEventListener("click", async e => {
 
   if (!e.target.classList.contains("vote-button")) return;
 
-  // Сохраняем позицию скролла перед голосованием
-  const scrollPosition = window.scrollY;
-
   const button = e.target;
   const voterName = employeeSelect.value;
   const contestWork = button.dataset.work;
@@ -472,11 +510,8 @@ document.addEventListener("click", async e => {
     });
   }
 
-  renderWorks();
-  updateCounterDisplay();
-
-  // Мгновенно возвращаем скролл на место
-  window.scrollTo({ top: scrollPosition, behavior: 'instant' });
+  // Обновляем только числа и кнопки точечно, не трогая картинки!
+  updateUIAfterVote();
 
   if (getEmployeeVotes() === 10 && !removing) {
     setTimeout(handleCompletionModal, 300);
