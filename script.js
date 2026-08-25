@@ -196,7 +196,7 @@ function handleCompletionModal() {
     // Сброс пасхалки к исходному состоянию
     clickCount = 0;
     isHealed = false;
-    if (memeImage) memeImage.src = "hate2.png";
+    if (memeImage) memeImage.src = "hate2.jpg";
     if (healHintBox) {
       healHintBox.innerHTML = `
         <span class="hint-text">Нажми три раза, если хочешь помочь девочкам захиллиться 💅</span>
