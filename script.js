@@ -12,7 +12,6 @@ const worksContainer = document.getElementById("works");
 const modalOverlay = document.getElementById("modalOverlay");
 const modalClose = document.getElementById("modalClose");
 const winnersList = document.getElementById("winnersList");
-const modalStatusBadge = document.getElementById("modalStatusBadge");
 
 let votes = [];
 let works = [];
@@ -184,15 +183,6 @@ function showWinnersModal() {
     `;
     winnersList.appendChild(el);
   });
-
-  const maxPossibleVotes = employees.length * 10;
-  if (votes.length >= maxPossibleVotes) {
-    modalStatusBadge.textContent = "🏆 Финальные результаты";
-    modalStatusBadge.style.color = "#00e5ff";
-  } else {
-    modalStatusBadge.textContent = "⏳ Промежуточные результаты";
-    modalStatusBadge.style.color = "#f59e0b";
-  }
 
   modalOverlay.classList.add("active");
 }
