@@ -203,13 +203,12 @@ function handleCompletionModal() {
     subClickCount = 0;
     if (memeImage) memeImage.src = "hate2.jpg";
     if (healImgBox) healImgBox.style.display = "block";
-    if (ronaldoGrid) {
-      ronaldoGrid.style.display = "none";
-      const cards = ronaldoGrid.querySelectorAll(".uno-card");
-      cards.forEach((c, idx) => c.classList.toggle("active", idx === 0));
-    }
+    if (ronaldoGrid) ronaldoGrid.style.display = "none";
     if (waitTitle) waitTitle.textContent = "Твой голос учтен!";
-    if (waitText) waitText.innerHTML = "Чья-то нервная система уже готовится к хейту в чате.<br>Да прибудет с вами сила 🫡";
+    if (waitText) {
+      waitText.style.display = "block";
+      waitText.innerHTML = "Чья-то нервная система уже готовится к хейту в чате.<br>Да прибудет с вами сила 🫡";
+    }
     if (healHintBox) {
       healHintBox.style.display = "flex";
       healHintBox.className = "heal-hint-box";
@@ -271,16 +270,14 @@ if (healImgBox) {
   });
 }
 
-// Клик по стопке карт (переключение по порядку в стиле UNO)
+// Клик по стопке карт (перемещение верхней карты в конец стопки в стиле UNO)
 if (ronaldoGrid) {
   ronaldoGrid.addEventListener("click", () => {
     if (clickStage === 3) {
-      const cards = Array.from(ronaldoGrid.querySelectorAll(".uno-card"));
-      const activeIdx = cards.findIndex(c => c.classList.contains("active"));
-      
-      cards[activeIdx].classList.remove("active");
-      const nextIdx = (activeIdx + 1) % cards.length;
-      cards[nextIdx].classList.add("active");
+      const cards = ronaldoGrid.querySelectorAll(".uno-card");
+      if (cards.length > 0) {
+        ronaldoGrid.appendChild(cards[0]);
+      }
     }
   });
 }
