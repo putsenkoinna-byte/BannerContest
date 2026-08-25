@@ -34,7 +34,7 @@ const waitCardBox = document.getElementById("waitCardBox");
 const waitTitle = document.getElementById("waitTitle");
 const waitText = document.getElementById("waitText");
 
-let clickStage = 0; // 0: Start, 1: Healed, 2: Barbie, 3: Ronaldo
+let clickStage = 0; // 0: Start, 1: Healed, 2: Barbie, 3: UNO Stack
 let subClickCount = 0;
 
 let votes = [];
@@ -204,7 +204,7 @@ function handleCompletionModal() {
     if (memeImage) memeImage.src = "hate2.jpg";
     if (healImgBox) healImgBox.style.display = "block";
     if (ronaldoGrid) ronaldoGrid.style.display = "none";
-    if (waitTitle) waitTitle.textContent = "Ваш голос учтен!";
+    if (waitTitle) waitTitle.textContent = "Твой голос учтен!";
     if (waitText) waitText.innerHTML = "Чья-то нервная система уже готовится к хейту в чате.<br>Да прибудет с вами сила 🫡";
     if (healHintBox) {
       healHintBox.style.display = "flex";
@@ -259,15 +259,27 @@ if (healImgBox) {
         healHintBox.className = "heal-hint-box warning";
       }
 
-      // Пауза 3 секунды для Барби
+      // Сокращено время ожидания Барби до 1.3 секунды
       setTimeout(() => {
-        triggerExplosionAndRonaldo();
-      }, 3000);
+        triggerExplosionAndUNO();
+      }, 1300);
     }
   });
 }
 
-function triggerExplosionAndRonaldo() {
+// Клик по стопке карт: перемещение верхней карты вниз стопки (стиль UNO)
+if (ronaldoGrid) {
+  ronaldoGrid.addEventListener("click", () => {
+    if (clickStage === 3) {
+      const cards = ronaldoGrid.querySelectorAll(".uno-card");
+      if (cards.length > 0) {
+        ronaldoGrid.appendChild(cards[0]);
+      }
+    }
+  });
+}
+
+function triggerExplosionAndUNO() {
   if (explosionOverlay) explosionOverlay.classList.add("active");
   if (waitCardBox) waitCardBox.classList.add("shake");
 
@@ -276,16 +288,16 @@ function triggerExplosionAndRonaldo() {
     if (healImgBox) healImgBox.style.display = "none";
     if (healHintBox) healHintBox.style.display = "none";
 
-    if (waitTitle) waitTitle.textContent = "ТЕПЕРЬ ЖИВИ С ЭТИМ ⚽🔥";
-    if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Сила ИИндии теперь с тобой! 🇮🇳";
+    if (waitTitle) waitTitle.textContent = "Сила Индии теперь с тобой! 🇮🇳";
+    if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Нажми на стопку карт ниже 👇";
 
-    if (ronaldoGrid) ronaldoGrid.style.display = "grid";
-  }, 500);
+    if (ronaldoGrid) ronaldoGrid.style.display = "block";
+  }, 700);
 
   setTimeout(() => {
     if (explosionOverlay) explosionOverlay.classList.remove("active");
     if (waitCardBox) waitCardBox.classList.remove("shake");
-  }, 1200);
+  }, 1600);
 }
 
 function createHeartsEffect() {
