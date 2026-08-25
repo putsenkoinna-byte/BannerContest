@@ -175,12 +175,11 @@ function renderWorks() {
   });
 }
 
-// Строгая проверка: окно победителей покажется ТОЛЬКО если в сумме 60 голосов со всех сотрудников
+// Показ поп-апа строго по условию общего количества голосов в системе (60 штук)
 function handleCompletionModal() {
-  const totalEmployees = employees.length; // 6 сотрудников
-  const requiredTotalVotes = totalEmployees * 10; // 60 голосов всего
+  const TOTAL_REQUIRED_VOTES = 60; // 6 сотрудников * 10 голосов
 
-  if (votes.length >= requiredTotalVotes) {
+  if (votes.length >= TOTAL_REQUIRED_VOTES) {
     showWinnersModal();
   } else {
     waitModalOverlay.classList.add("active");
@@ -315,6 +314,7 @@ document.addEventListener("click", async e => {
   renderWorks();
   updateCounterDisplay();
 
+  // Если сотрудник только что проставил свой 10-й голос
   if (getEmployeeVotes() === 10) {
     setTimeout(handleCompletionModal, 300);
   }
