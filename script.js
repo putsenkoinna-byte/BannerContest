@@ -430,7 +430,7 @@ function createHeartsEffect() {
   }
 }
 
-// ПОП-АП ПОБЕДИТЕЛЕЙ (БЕЗ СЕРДЕЧЕК И КОЛИЧЕСТВА ГОЛОСОВ, КАК НА ВТОРОМ ЭТАЛОННОМ СКРИНШОТЕ)
+// ТОТ САМЫЙ ЭТАЛОННЫЙ ПОП-АП (БЕЗ СЕРДЕЧЕК, ТОЛЬКО НИК И КНОПКА ССЫЛКИ КАК НА СКРИНЕ)
 window.showWinnersModal = function() {
   const top10 = [
     { author: "BladeTag", postLink: "https://t.me/qq1win/5273481" },
