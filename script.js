@@ -45,6 +45,13 @@ employees.forEach(name => {
   employeeSelect.appendChild(option);
 });
 
+// Персональные лимиты голосов (Вика — 7, Андрей — 6, остальные — 10)
+function getEmployeeMaxVotes(empName) {
+  if (empName === "Вика") return 7;
+  if (empName === "Андрей") return 6;
+  return 10;
+}
+
 function showToast(text) {
   if (!toast) return;
   toast.textContent = text;
@@ -151,7 +158,6 @@ function renderMedia(files) {
   `;
 }
 
-// Полный рендеринг (при первой загрузке или смене пользователя)
 function renderWorks() {
   worksContainer.innerHTML = "";
 
@@ -166,7 +172,7 @@ function renderWorks() {
 
     const card = document.createElement("div");
     card.className = "card";
-    card.dataset.workId = record.id; // Сохраняем ID работы для точечного обновления
+    card.dataset.workId = record.id;
 
     card.innerHTML = `
       ${renderMedia(fields["Конкурсные работы"])}
@@ -205,7 +211,6 @@ function renderWorks() {
   });
 }
 
-// Точечное обновление интерфейса без пересоздания карточек и сброса картинок
 function updateUIAfterVote() {
   const currentVoter = employeeSelect.value;
 
@@ -216,12 +221,10 @@ function updateUIAfterVote() {
     const votesBadge = card.querySelector(".votes-badge");
     const voteButton = card.querySelector(".vote-button");
 
-    // Обновляем счетчик лайков
     if (votesBadge) {
       votesBadge.textContent = `❤️ ${getVotesForWork(record.id)}`;
     }
 
-    // Обновляем состояние кнопки голосования
     if (voteButton) {
       const authorVote = getAuthorVote(record.fields.Username);
       const currentWorkVote = hasCurrentWorkVote(record.id);
@@ -246,7 +249,7 @@ function updateUIAfterVote() {
 }
 
 function handleCompletionModal() {
-  const finishedEmployeesCount = employees.filter(empName => getEmployeeVotes(empName) >= 10).length;
+  const finishedEmployeesCount = employees.filter(empName => getEmployeeVotes(empName) >= getEmployeeMaxVotes(empName)).length;
 
   if (finishedEmployeesCount >= employees.length) {
     showWinnersModal();
@@ -476,6 +479,8 @@ document.addEventListener("click", async e => {
 
   if (!e.target.classList.contains("vote-button")) return;
 
+  const scrollPosition = window.scrollY;
+
   const button = e.target;
   const voterName = employeeSelect.value;
   const contestWork = button.dataset.work;
@@ -483,8 +488,9 @@ document.addEventListener("click", async e => {
   if (!voterName) return;
 
   const removing = button.classList.contains("remove");
+  const maxAllowed = getEmployeeMaxVotes(voterName);
 
-  if (!removing && getEmployeeVotes() >= 10) {
+  if (!removing && getEmployeeVotes() >= maxAllowed) {
     handleCompletionModal();
     return;
   }
@@ -509,10 +515,10 @@ document.addEventListener("click", async e => {
     });
   }
 
-  // Обновляем только числа и кнопки точечно, не трогая картинки!
   updateUIAfterVote();
+  window.scrollTo({ top: scrollPosition, behavior: 'instant' });
 
-  if (getEmployeeVotes() === 10 && !removing) {
+  if (getEmployeeVotes() === maxAllowed && !removing) {
     setTimeout(handleCompletionModal, 300);
   }
 
@@ -530,10 +536,11 @@ document.addEventListener("click", async e => {
 function updateCounterDisplay() {
   const counter = document.getElementById("votesLeft");
   const usedVotes = getEmployeeVotes();
-  const remaining = 10 - usedVotes;
+  const maxAllowed = getEmployeeMaxVotes(employeeSelect.value);
+  const remaining = maxAllowed - usedVotes;
 
   if (employeeSelect.value) {
-    if (counter) counter.textContent = `Ваши голоса: ${usedVotes}/10`;
+    if (counter) counter.textContent = `Ваши голоса: ${usedVotes}/${maxAllowed}`;
     if (stickyCounterText) stickyCounterText.innerHTML = `Осталось голосов: <span>${remaining}</span>`;
     if (stickyCounter) stickyCounter.classList.add("visible");
   } else {
