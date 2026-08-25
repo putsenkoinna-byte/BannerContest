@@ -259,10 +259,10 @@ if (healImgBox) {
         healHintBox.className = "heal-hint-box warning";
       }
 
-      // Запуск таймера взрыва
+      // Пауза 3 секунды, чтобы Барби успела покрасоваться
       setTimeout(() => {
         triggerExplosionAndRonaldo();
-      }, 1400);
+      }, 3000);
     }
   });
 }
@@ -276,8 +276,8 @@ function triggerExplosionAndRonaldo() {
     if (healImgBox) healImgBox.style.display = "none";
     if (healHintBox) healHintBox.style.display = "none";
 
-    if (waitTitle) waitTitle.textContent = "ТЕПЕРЬ ЖИВИ С ЭТИМ 🔥";
-    if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Сила Роналду теперь с тобой!";
+    if (waitTitle) waitTitle.textContent = "ТЕПЕРЬ ЖИВИ С ЭТИМ...";
+    if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Сила ИИндии теперь с тобой!";
 
     if (ronaldoGrid) ronaldoGrid.style.display = "grid";
   }, 400);
@@ -285,7 +285,7 @@ function triggerExplosionAndRonaldo() {
   setTimeout(() => {
     if (explosionOverlay) explosionOverlay.classList.remove("active");
     if (waitCardBox) waitCardBox.classList.remove("shake");
-  }, 800);
+  }, 900);
 }
 
 function createHeartsEffect() {
