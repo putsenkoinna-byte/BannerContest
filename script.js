@@ -203,7 +203,11 @@ function handleCompletionModal() {
     subClickCount = 0;
     if (memeImage) memeImage.src = "hate2.jpg";
     if (healImgBox) healImgBox.style.display = "block";
-    if (ronaldoGrid) ronaldoGrid.style.display = "none";
+    if (ronaldoGrid) {
+      ronaldoGrid.style.display = "none";
+      const cards = ronaldoGrid.querySelectorAll(".uno-card");
+      cards.forEach((c, idx) => c.classList.toggle("active", idx === 0));
+    }
     if (waitTitle) waitTitle.textContent = "Твой голос учтен!";
     if (waitText) waitText.innerHTML = "Чья-то нервная система уже готовится к хейту в чате.<br>Да прибудет с вами сила 🫡";
     if (healHintBox) {
@@ -259,7 +263,7 @@ if (healImgBox) {
         healHintBox.className = "heal-hint-box warning";
       }
 
-      // Сокращено время ожидания Барби до 1.3 секунды
+      // Пауза 1.3 секунды перед взрывом
       setTimeout(() => {
         triggerExplosionAndUNO();
       }, 1300);
@@ -267,14 +271,16 @@ if (healImgBox) {
   });
 }
 
-// Клик по стопке карт: перемещение верхней карты вниз стопки (стиль UNO)
+// Клик по стопке карт (переключение по порядку в стиле UNO)
 if (ronaldoGrid) {
   ronaldoGrid.addEventListener("click", () => {
     if (clickStage === 3) {
-      const cards = ronaldoGrid.querySelectorAll(".uno-card");
-      if (cards.length > 0) {
-        ronaldoGrid.appendChild(cards[0]);
-      }
+      const cards = Array.from(ronaldoGrid.querySelectorAll(".uno-card"));
+      const activeIdx = cards.findIndex(c => c.classList.contains("active"));
+      
+      cards[activeIdx].classList.remove("active");
+      const nextIdx = (activeIdx + 1) % cards.length;
+      cards[nextIdx].classList.add("active");
     }
   });
 }
@@ -288,8 +294,8 @@ function triggerExplosionAndUNO() {
     if (healImgBox) healImgBox.style.display = "none";
     if (healHintBox) healHintBox.style.display = "none";
 
-    if (waitTitle) waitTitle.textContent = "Сила Индии теперь с тобой! 🇮🇳";
-    if (waitText) waitText.innerHTML = "Ты зашел слишком далеко... Нажми на стопку карт ниже 👇";
+    if (waitTitle) waitTitle.textContent = "Сила ИИндии теперь с тобой!";
+    if (waitText) waitText.style.display = "none"; // Убираем вторую строку совсем
 
     if (ronaldoGrid) ronaldoGrid.style.display = "block";
   }, 700);
