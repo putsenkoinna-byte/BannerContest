@@ -70,12 +70,31 @@ async function loadWorks() {
     const data = await response.json();
     works = data.records || [];
 
+    // Новая сложная сортировка:
+    // 1. Видео + Описание (первыми)
+    // 2. Только Описание
+    // 3. Без текста
+    // 4. Залетные (в самом конце)
     works.sort((a, b) => {
-      const aZalet = String(a.fields["Примечания"] || "").toLowerCase().includes("залетный");
-      const bZalet = String(b.fields["Примечания"] || "").toLowerCase().includes("залетный");
+      const aFields = a.fields || {};
+      const bFields = b.fields || {};
+
+      const aZalet = String(aFields["Примечания"] || "").toLowerCase().includes("залетный");
+      const bZalet = String(bFields["Примечания"] || "").toLowerCase().includes("залетный");
+
       if (aZalet && !bZalet) return 1;
       if (!aZalet && bZalet) return -1;
-      return 0;
+
+      const aText = String(aFields["Описание"] || aFields["Текст"] || aFields["Заметка"] || "").trim();
+      const bText = String(bFields["Описание"] || bFields["Текст"] || bFields["Заметка"] || "").trim();
+
+      const aHasVideo = (aFields["Конкурсные работы"] || []).some(f => f.type?.startsWith("video"));
+      const bHasVideo = (bFields["Конкурсные работы"] || []).some(f => f.type?.startsWith("video"));
+
+      const aScore = (aText ? (aHasVideo ? 3 : 2) : 1);
+      const bScore = (bText ? (bHasVideo ? 3 : 2) : 1);
+
+      return bScore - aScore;
     });
 
     renderWorks();
@@ -206,7 +225,9 @@ function handleCompletionModal() {
     if (ronaldoGrid) {
       ronaldoGrid.style.display = "none";
       const cards = ronaldoGrid.querySelectorAll(".uno-card");
-      cards.forEach(c => c.classList.remove("swapped"));
+      cards.forEach((c, idx) => {
+        c.className = `uno-card pos-${idx}`;
+      });
     }
     if (waitTitle) waitTitle.textContent = "Твой голос учтен!";
     if (waitText) {
@@ -274,17 +295,25 @@ if (healImgBox) {
   });
 }
 
-// Клик по стопке карт (перемещение верхней карты в конец стопки в стиле UNO)
+// Клик по стопке карт (плавное циклическое перелистывание позиций классов)
 if (ronaldoGrid) {
   ronaldoGrid.addEventListener("click", () => {
     if (clickStage === 3) {
-      const cards = ronaldoGrid.querySelectorAll(".uno-card");
-      if (cards.length > 0) {
-        cards[0].classList.add("swapped");
+      const cards = Array.from(ronaldoGrid.querySelectorAll(".uno-card"));
+      const topCard = cards.find(c => c.classList.contains("pos-0"));
+
+      if (topCard) {
+        topCard.classList.add("swapping");
+
         setTimeout(() => {
-          cards[0].classList.remove("swapped");
-          ronaldoGrid.appendChild(cards[0]);
-        }, 300);
+          cards.forEach(c => {
+            let currentPos = parseInt(c.dataset.pos);
+            let newPos = (currentPos - 1 + cards.length) % cards.length;
+            c.dataset.pos = newPos;
+            c.className = `uno-card pos-${newPos}`;
+          });
+          topCard.classList.remove("swapping");
+        }, 200);
       }
     }
   });
