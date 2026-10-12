@@ -38,6 +38,35 @@ let subClickCount = 0;
 let votes = [];
 let works = [];
 
+let voteRequestInFlight = false;
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function safeHttpUrl(value = "") {
+  try {
+    const url = new URL(String(value), window.location.origin);
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
+  } catch {
+    return "";
+  }
+}
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return data;
+}
+
 if (employeeSelect) {
   employees.forEach(name => {
     const option = document.createElement("option");
@@ -62,9 +91,8 @@ function showToast(text) {
 
 async function loadVotes() {
   try {
-    const response = await fetch(`/api/votes?_t=${Date.now()}`);
-    const data = await response.json();
-    votes = data.records || [];
+    const data = await fetchJson(`/api/votes?_t=${Date.now()}`);
+    votes = Array.isArray(data.records) ? data.records : [];
   } catch (err) {
     console.error("Ошибка загрузки голосов:", err);
   }
@@ -72,9 +100,8 @@ async function loadVotes() {
 
 async function loadWorks() {
   try {
-    const response = await fetch(`/api/works?_t=${Date.now()}`);
-    const data = await response.json();
-    works = data.records || [];
+    const data = await fetchJson(`/api/works?_t=${Date.now()}`);
+    works = Array.isArray(data.records) ? data.records : [];
 
     works.sort((a, b) => {
       const aFields = a.fields || {};
@@ -115,7 +142,7 @@ function getVotesForWork(workId) {
   }).length;
 }
 
-function getEmployeeVotes(empName = employeeSelect.value) {
+function getEmployeeVotes(empName = employeeSelect?.value || "") {
   if (!empName) return 0;
   return votes.filter(vote => vote.fields["Voter Name"] === empName).length;
 }
@@ -126,7 +153,7 @@ function getAuthorVote(username) {
     const targetWorkId = Array.isArray(workIds) ? workIds[0] : workIds;
     const work = works.find(item => item.id === targetWorkId);
     return (
-      vote.fields["Voter Name"] === employeeSelect.value &&
+      vote.fields["Voter Name"] === (employeeSelect?.value || "") &&
       work?.fields?.Username === username
     );
   });
@@ -136,7 +163,7 @@ function hasCurrentWorkVote(workId) {
   return votes.some(vote => {
     const workField = vote.fields["Contest Work"];
     const isMatch = Array.isArray(workField) ? workField.includes(workId) : (workField === workId);
-    return vote.fields["Voter Name"] === employeeSelect.value && isMatch;
+    return vote.fields["Voter Name"] === (employeeSelect?.value || "") && isMatch;
   });
 }
 
@@ -145,10 +172,12 @@ function renderMedia(files) {
 
   if (files.length === 1) {
     const file = files[0];
+    const mediaUrl = safeHttpUrl(file.url);
+    if (!mediaUrl) return "";
     if (file.type?.startsWith("video")) {
-      return `<video controls preload="metadata" src="${file.url}"></video>`;
+      return `<video controls preload="metadata" playsinline src="${mediaUrl}"></video>`;
     }
-    return `<img src="${file.url}" alt="work" loading="lazy">`;
+    return `<img src="${mediaUrl}" alt="Конкурсная работа" loading="lazy" decoding="async">`;
   }
 
   return `
@@ -156,10 +185,12 @@ function renderMedia(files) {
       <button type="button" class="slider-prev">‹</button>
       <div class="slider-items">
         ${files.map((file, index) => {
+          const mediaUrl = safeHttpUrl(file.url);
+          if (!mediaUrl) return "";
           if (file.type?.startsWith("video")) {
-            return `<video class="slider-item ${index === 0 ? "active" : ""}" controls preload="metadata" src="${file.url}"></video>`;
+            return `<video class="slider-item ${index === 0 ? "active" : ""}" controls preload="metadata" playsinline src="${mediaUrl}"></video>`;
           }
-          return `<img class="slider-item ${index === 0 ? "active" : ""}" src="${file.url}" alt="work" loading="lazy">`;
+          return `<img class="slider-item ${index === 0 ? "active" : ""}" src="${mediaUrl}" alt="Конкурсная работа" loading="lazy" decoding="async">`;
         }).join("")}
       </div>
       <button type="button" class="slider-next">›</button>
@@ -175,10 +206,13 @@ function renderWorks() {
     const fields = record.fields;
     if (!fields.Username || !fields["Конкурсные работы"]?.length) return;
 
-    const rawUsername = String(fields.Username).replace(/^@+/, '');
+    const rawUsername = String(fields.Username).replace(/^@+/, "");
     const authorVote = getAuthorVote(fields.Username);
     const currentWorkVote = hasCurrentWorkVote(record.id);
     const workDescription = fields["Описание"] || fields["Текст"] || fields["Заметка"] || "";
+    const safeUsername = escapeHtml(rawUsername);
+    const safeDescription = escapeHtml(workDescription);
+    const postUrl = safeHttpUrl(fields["Ссылка на пост"] || "");
 
     const card = document.createElement("div");
     card.className = "card";
@@ -189,13 +223,13 @@ function renderWorks() {
       
       <div class="card-content">
         <div class="card-header">
-          <div class="username">@${rawUsername}</div>
+          <div class="username">@${safeUsername}</div>
           <div class="votes-badge">❤️ ${getVotesForWork(record.id)}</div>
         </div>
 
         ${workDescription ? `
           <div class="work-text-container">
-            <div class="work-text">${workDescription}</div>
+            <div class="work-text">${safeDescription}</div>
             ${workDescription.length > 80 ? `<button type="button" class="text-toggle-btn">Читать полностью ▼</button>` : ''}
           </div>
         ` : ''}
@@ -210,8 +244,8 @@ function renderWorks() {
             ${currentWorkVote ? "Убрать голос" : authorVote ? "За автора уже отдано" : "Голосовать"}
           </button>
 
-          ${fields["Ссылка на пост"] ? `
-            <a class="link-button" href="${fields["Ссылка на пост"]}" target="_blank" rel="noopener noreferrer">🔗</a>
+          ${postUrl ? `
+            <a class="link-button" href="${postUrl}" target="_blank" rel="noopener noreferrer" aria-label="Открыть пост">🔗</a>
           ` : ""}
         </div>
       </div>
@@ -483,7 +517,7 @@ document.addEventListener("click", async e => {
   const userBtn = e.target.closest("[data-copy-user]");
   if (userBtn) {
     const username = userBtn.dataset.copyUser;
-    navigator.clipboard.writeText(username);
+    await navigator.clipboard.writeText(username).catch(() => {});
     showToast(`Ник ${username} скопирован!`);
     return;
   }
@@ -491,7 +525,7 @@ document.addEventListener("click", async e => {
   const linkBtn = e.target.closest("[data-copy-link]");
   if (linkBtn) {
     const link = linkBtn.dataset.copyLink;
-    navigator.clipboard.writeText(link);
+    await navigator.clipboard.writeText(link).catch(() => {});
     showToast("Ссылка на пост скопирована!");
     return;
   }
@@ -518,6 +552,7 @@ document.addEventListener("click", async e => {
     }
 
     items[current].classList.add("active");
+    items[current].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
     return;
   }
 
@@ -593,7 +628,7 @@ function updateCounterDisplay() {
   const counter = document.getElementById("votesLeft");
   const usedVotes = getEmployeeVotes();
   const maxAllowed = getEmployeeMaxVotes(employeeSelect.value);
-  const remaining = maxAllowed - usedVotes;
+  const remaining = Math.max(0, maxAllowed - usedVotes);
 
   if (employeeSelect.value) {
     if (counter) counter.textContent = `Ваши голоса: ${usedVotes}/${maxAllowed}`;
