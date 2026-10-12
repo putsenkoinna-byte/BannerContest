@@ -1,1 +1,1 @@
-# BannerContest
+# CosplayBattle
