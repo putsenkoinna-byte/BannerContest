@@ -1,94 +1,24 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>#WINternational2026</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f1016">
+<title>#CosplayBattle — голосование</title>
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
-
-<header class="header">
-  <div class="logo-group">
-    <div class="brand-badge">#WINternational2026</div>
-  </div>
-</header>
-
+<header class="header"><div class="logo-group"><div class="brand-badge">#CosplayBattle</div></div></header>
 <main class="container">
-  <section class="employee-box">
-    <label for="employeeSelect">ВЫ КТО ТАКИЕ?</label>
-    <div class="select-wrapper">
-      <select id="employeeSelect">
-        <option value="">Выбери свое имя из списка...</option>
-      </select>
-    </div>
-    <div id="votesLeft" class="votes-counter"></div>
-  </section>
-
-  <section id="works" class="works-grid"></section>
+<section class="employee-box" aria-label="Выбор голосующего">
+<label for="employeeSelect">Кто голосует?</label>
+<div class="select-wrapper"><select id="employeeSelect"><option value="">Загружаем имена...</option></select></div>
+<div id="votesLeft" class="votes-counter" aria-live="polite"></div>
+</section>
+<section id="works" class="works-grid" aria-label="Конкурсные работы"><p>Загружаем конкурсные работы...</p></section>
 </main>
-
-<!-- Плавающий счетчик -->
-<div id="stickyCounter" class="sticky-counter">
-  <span id="stickyCounterText">Осталось голосов: 10</span>
-  <span id="voteAnimBadge" class="vote-anim-badge"></span>
-</div>
-
-<!-- Поп-ап 1: Победители -->
-<div id="modalOverlay" class="modal-overlay">
-  <div class="modal-card">
-    <button type="button" class="modal-close" id="modalClose">&times;</button>
-    <div class="modal-header">
-      <div class="trophy-wrapper">
-        <img src="trophy.png" alt="Trophy" class="trophy-img">
-      </div>
-      <h2 class="modal-title">А вот и победители!</h2>
-      <div class="modal-subtitle">
-        (Блен, снова не из Индии 😭)
-      </div>
-    </div>
-    <div id="winnersList" class="winners-list"></div>
-  </div>
-</div>
-
-<!-- Поп-ап 2: Промежуточный мемный с интерактивным сюжетом -->
-<div id="waitModalOverlay" class="modal-overlay">
-  <div class="modal-card wait-card" id="waitCardBox">
-    <button type="button" class="modal-close" id="waitModalClose">&times;</button>
-    <div class="wait-content">
-      <h2 class="wait-title" id="waitTitle">Твой голос учтен!</h2>
-      <p class="wait-text" id="waitText">
-        Чья-то нервная система уже готовится к хейту в чате.<br>
-        Да прибудет с вами сила 🫡
-      </p>
-
-      <div class="heal-hint-box" id="healHintBox">
-        <span class="hint-text">Нажми три раза, если хочешь помочь девочкам захиллиться 💅</span>
-        <span class="hint-arrow">👇</span>
-      </div>
-
-      <!-- Контейнер хейт/хил картинки -->
-      <div class="wait-img-wrapper" id="healImgBox">
-        <div class="flash-overlay" id="flashOverlay"></div>
-        <div class="explosion-overlay" id="explosionOverlay"></div>
-        <img src="hate2.jpg" alt="Meme" class="wait-img" id="memeImage">
-        <div class="hearts-container" id="heartsContainer"></div>
-      </div>
-
-      <!-- Стопка карточек (с Роналду и лучшими артами) -->
-      <div class="uno-stack-container" id="ronaldoGrid" style="display: none;">
-        <img src="ronaldo1.jpg" alt="Ronaldo 1" class="uno-card pos-0" data-pos="0">
-        <img src="ronaldo2.jpg" alt="Ronaldo 2" class="uno-card pos-1" data-pos="1">
-        <img src="photo_2026-07-11_21-31-52.jpg" alt="Art Borat" class="uno-card pos-2" data-pos="2">
-        <img src="photo_2026-07-11_14-37-45.jpg" alt="Art AAR" class="uno-card pos-3" data-pos="3">
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Уведомление о копировании -->
-<div id="toast" class="toast">Скопировано!</div>
-
-<script src="script.js?v=24"></script>
+<div id="stickyCounter" class="sticky-counter"><span id="stickyCounterText">Осталось голосов: 5</span></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="script.js?v=4" defer></script>
 </body>
 </html>
