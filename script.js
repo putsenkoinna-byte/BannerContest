@@ -1,662 +1,163 @@
-const employees = [
-  "Рома",
-  "Вика",
-  "Арина",
-  "Карина",
-  "Андрей"
-];
+/* Конкурс — клиент. Настройки и PIN находятся только на сервере. */
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const select = $('employeeSelect');
+  const worksNode = $('works');
+  if (!select || !worksNode) return;
 
-const employeeSelect = document.getElementById("employeeSelect");
-const worksContainer = document.getElementById("works");
-
-const modalOverlay = document.getElementById("modalOverlay");
-const modalClose = document.getElementById("modalClose");
-const winnersList = document.getElementById("winnersList");
-
-const waitModalOverlay = document.getElementById("waitModalOverlay");
-const waitModalClose = document.getElementById("waitModalClose");
-
-const stickyCounter = document.getElementById("stickyCounter");
-const stickyCounterText = document.getElementById("stickyCounterText");
-const voteAnimBadge = document.getElementById("voteAnimBadge");
-const toast = document.getElementById("toast");
-
-const memeImage = document.getElementById("memeImage");
-const healImgBox = document.getElementById("healImgBox");
-const healHintBox = document.getElementById("healHintBox");
-const flashOverlay = document.getElementById("flashOverlay");
-const explosionOverlay = document.getElementById("explosionOverlay");
-const heartsContainer = document.getElementById("heartsContainer");
-const ronaldoGrid = document.getElementById("ronaldoGrid");
-const waitCardBox = document.getElementById("waitCardBox");
-const waitTitle = document.getElementById("waitTitle");
-const waitText = document.getElementById("waitText");
-
-let clickStage = 0;
-let subClickCount = 0;
-
-let votes = [];
-let works = [];
-
-let voteRequestInFlight = false;
-
-function escapeHtml(value = "") {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function safeHttpUrl(value = "") {
-  try {
-    const url = new URL(String(value), window.location.origin);
-    return ["http:", "https:"].includes(url.protocol) ? url.href : "";
-  } catch {
-    return "";
+  let works = [], votes = [], closed = false, busy = false, winnerRows = [];
+  let lastRefreshId = 0;
+  const normalize = s => String(s || '').trim().replace(/^@+/, '').toLocaleLowerCase('ru');
+  const escape = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const url = s => { try { const u = new URL(String(s)); return ['https:','http:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } };
+  async function api(path, options) {
+    const res = await fetch(path, options);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
   }
-}
+  const post = (path, body) => api(path, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
 
-async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(data.error || `HTTP ${response.status}`);
+  const tools = document.createElement('div'); tools.className = 'contest-tools';
+  const addButton = document.createElement('button'); addButton.type='button'; addButton.className='small-tool-btn'; addButton.textContent='+ Добавить своё имя';
+  const finishButton = document.createElement('button'); finishButton.type='button'; finishButton.className='small-tool-btn admin-button'; finishButton.textContent='Завершить голосование'; finishButton.hidden=true;
+  const winnersButton = document.createElement('button'); winnersButton.type='button'; winnersButton.className='small-tool-btn'; winnersButton.textContent='🏆 Победители'; winnersButton.hidden=true;
+  tools.append(addButton, finishButton, winnersButton); select.insertAdjacentElement('afterend',tools);
+  const overlay = document.createElement('div'); overlay.className='contest-dialog-overlay'; overlay.hidden=true; overlay.innerHTML='<section class="contest-dialog" role="dialog" aria-modal="true" aria-labelledby="contestDialogTitle"><button type="button" class="contest-dialog-close" aria-label="Закрыть">×</button><div class="contest-dialog-body"></div></section>';
+  document.body.append(overlay);
+  const dialogBody = overlay.querySelector('.contest-dialog-body');
+  const closeDialog = () => {overlay.hidden=true; dialogBody.replaceChildren();};
+  overlay.addEventListener('click', e => {if(e.target===overlay || e.target.closest('.contest-dialog-close')) closeDialog();});
+  document.addEventListener('keydown', e => {if(e.key==='Escape' && !overlay.hidden) closeDialog();});
+  function showDialog(html) {dialogBody.innerHTML=html; overlay.hidden=false; overlay.querySelector('input,button')?.focus();}
+  let toastTimer;
+  function notify(message) {
+    let t = $('toast');
+    if (!t) {t=document.createElement('div'); t.id='toast'; t.className='toast'; document.body.append(t);}
+    t.textContent=message; t.classList.add('active'); clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>t.classList.remove('active'),3000);
   }
-  return data;
-}
-
-if (employeeSelect) {
-  employees.forEach(name => {
-    const option = document.createElement("option");
-    option.value = name;
-    option.textContent = name;
-    employeeSelect.appendChild(option);
-  });
-}
-
-function getEmployeeMaxVotes(empName) {
-  if (empName === "Вика") return 7;
-  if (empName === "Андрей") return 6;
-  return 10;
-}
-
-function showToast(text) {
-  if (!toast) return;
-  toast.textContent = text;
-  toast.classList.add("active");
-  setTimeout(() => toast.classList.remove("active"), 2000);
-}
-
-async function loadVotes() {
-  try {
-    const data = await fetchJson(`/api/votes?_t=${Date.now()}`);
-    votes = Array.isArray(data.records) ? data.records : [];
-  } catch (err) {
-    console.error("Ошибка загрузки голосов:", err);
+  function chosenName() {return select.value.trim();}
+  function remaining() {return Math.max(0,5-votes.filter(v=>normalize(v.fields?.['Voter Name'])===normalize(chosenName())).length);}
+  function updateCounter() {
+    const used=chosenName()?5-remaining():0;
+    if ($('votesLeft')) $('votesLeft').textContent=chosenName()?`Ваши голоса: ${used}/5`:'';
+    if ($('stickyCounterText')) $('stickyCounterText').textContent=`Осталось голосов: ${remaining()}`;
+    $('stickyCounter')?.classList.toggle('visible',Boolean(chosenName()) && !closed);
   }
-}
-
-async function loadWorks() {
-  try {
-    const data = await fetchJson(`/api/works?_t=${Date.now()}`);
-    works = Array.isArray(data.records) ? data.records : [];
-
-    works.sort((a, b) => {
-      const aFields = a.fields || {};
-      const bFields = b.fields || {};
-
-      const aZalet = String(aFields["Примечания"] || "").toLowerCase().includes("залетный");
-      const bZalet = String(bFields["Примечания"] || "").toLowerCase().includes("залетный");
-
-      if (aZalet && !bZalet) return 1;
-      if (!aZalet && bZalet) return -1;
-
-      const aText = String(aFields["Описание"] || aFields["Текст"] || aFields["Заметка"] || "").trim();
-      const bText = String(bFields["Описание"] || bFields["Текст"] || bFields["Заметка"] || "").trim();
-
-      const aHasVideo = (aFields["Конкурсные работы"] || []).some(f => f.type?.startsWith("video"));
-      const bHasVideo = (bFields["Конкурсные работы"] || []).some(f => f.type?.startsWith("video"));
-
-      const aScore = (aText ? (aHasVideo ? 3 : 2) : 1);
-      const bScore = (bText ? (bHasVideo ? 3 : 2) : 1);
-
-      return bScore - aScore;
+  function setNames(names) {
+    const selected=chosenName() || localStorage.getItem('contest-voter-name') || '';
+    select.replaceChildren(new Option('Выберите своё имя',''));
+    for (const n of names) select.add(new Option(n,n));
+    if (names.includes(selected)) select.value=selected;
+    finishButton.hidden=normalize(chosenName())!=='арина' || closed;
+    addButton.hidden=closed;
+    winnersButton.hidden=!closed;
+  }
+  const authorById = () => new Map(works.map(w=>[w.id,normalize(w.fields?.Username)]));
+  function uniqueVotes(rawVotes) {
+    const authors=authorById();
+    const seen=new Set();
+    return rawVotes.filter(v=>{
+      const voter=normalize(v.fields?.['Voter Name']);
+      const ids=Array.isArray(v.fields?.['Contest Work'])?v.fields['Contest Work']:[v.fields?.['Contest Work']];
+      const author=ids.map(id=>authors.get(id)).find(Boolean);
+      if(!voter || !author) return false;
+      const fingerprint=voter+'|'+author;
+      if(seen.has(fingerprint)) return false;
+      seen.add(fingerprint);
+      return true;
     });
-
-    renderWorks();
-    checkHashUrl();
-  } catch (err) {
-    console.error("Ошибка загрузки работ:", err);
   }
-}
-
-function getVotesForWork(workId) {
-  return votes.filter(vote => {
-    const workField = vote.fields["Contest Work"];
-    if (Array.isArray(workField)) {
-      return workField.includes(workId);
-    }
-    return workField === workId;
-  }).length;
-}
-
-function getEmployeeVotes(empName = employeeSelect?.value || "") {
-  if (!empName) return 0;
-  return votes.filter(vote => vote.fields["Voter Name"] === empName).length;
-}
-
-function getAuthorVote(username) {
-  return votes.find(vote => {
-    const workIds = vote.fields["Contest Work"] || [];
-    const targetWorkId = Array.isArray(workIds) ? workIds[0] : workIds;
-    const work = works.find(item => item.id === targetWorkId);
-    return (
-      vote.fields["Voter Name"] === (employeeSelect?.value || "") &&
-      work?.fields?.Username === username
-    );
-  });
-}
-
-function hasCurrentWorkVote(workId) {
-  return votes.some(vote => {
-    const workField = vote.fields["Contest Work"];
-    const isMatch = Array.isArray(workField) ? workField.includes(workId) : (workField === workId);
-    return vote.fields["Voter Name"] === (employeeSelect?.value || "") && isMatch;
-  });
-}
-
-function renderMedia(files) {
-  if (!files || !files.length) return "";
-
-  if (files.length === 1) {
-    const file = files[0];
-    const mediaUrl = safeHttpUrl(file.url);
-    if (!mediaUrl) return "";
-    if (file.type?.startsWith("video")) {
-      return `<video controls preload="metadata" playsinline src="${mediaUrl}"></video>`;
-    }
-    return `<img src="${mediaUrl}" alt="Конкурсная работа" loading="lazy" decoding="async">`;
+  function counts() {
+    const count=new Map(); for(const v of votes) for(const id of (Array.isArray(v.fields?.['Contest Work']) ? v.fields['Contest Work'] : [v.fields?.['Contest Work']])) if(id) count.set(id,(count.get(id)||0)+1);
+    return count;
   }
-
-  return `
-    <div class="slider">
-      <button type="button" class="slider-prev">‹</button>
-      <div class="slider-items">
-        ${files.map((file, index) => {
-          const mediaUrl = safeHttpUrl(file.url);
-          if (!mediaUrl) return "";
-          if (file.type?.startsWith("video")) {
-            return `<video class="slider-item ${index === 0 ? "active" : ""}" controls preload="metadata" playsinline src="${mediaUrl}"></video>`;
-          }
-          return `<img class="slider-item ${index === 0 ? "active" : ""}" src="${mediaUrl}" alt="Конкурсная работа" loading="lazy" decoding="async">`;
-        }).join("")}
-      </div>
-      <button type="button" class="slider-next">›</button>
-    </div>
-  `;
-}
-
-function renderWorks() {
-  if (!worksContainer) return;
-  worksContainer.innerHTML = "";
-
-  works.forEach(record => {
-    const fields = record.fields;
-    if (!fields.Username || !fields["Конкурсные работы"]?.length) return;
-
-    const rawUsername = String(fields.Username).replace(/^@+/, "");
-    const authorVote = getAuthorVote(fields.Username);
-    const currentWorkVote = hasCurrentWorkVote(record.id);
-    const workDescription = fields["Описание"] || fields["Текст"] || fields["Заметка"] || "";
-    const safeUsername = escapeHtml(rawUsername);
-    const safeDescription = escapeHtml(workDescription);
-    const postUrl = safeHttpUrl(fields["Ссылка на пост"] || "");
-
-    const card = document.createElement("div");
-    card.className = "card";
-    card.dataset.workId = record.id;
-
-    card.innerHTML = `
-      ${renderMedia(fields["Конкурсные работы"])}
-      
-      <div class="card-content">
-        <div class="card-header">
-          <div class="username">@${safeUsername}</div>
-          <div class="votes-badge">❤️ ${getVotesForWork(record.id)}</div>
-        </div>
-
-        ${workDescription ? `
-          <div class="work-text-container">
-            <div class="work-text">${safeDescription}</div>
-            ${workDescription.length > 80 ? `<button type="button" class="text-toggle-btn">Читать полностью ▼</button>` : ''}
-          </div>
-        ` : ''}
-
-        <div class="button-row">
-          <button
-            class="vote-button ${currentWorkVote ? "remove" : ""}"
-            data-work="${record.id}"
-            data-author="${fields.Username}"
-            ${employeeSelect.value && (!authorVote || currentWorkVote) ? "" : "disabled"}
-          >
-            ${currentWorkVote ? "Убрать голос" : authorVote ? "За автора уже отдано" : "Голосовать"}
-          </button>
-
-          ${postUrl ? `
-            <a class="link-button" href="${postUrl}" target="_blank" rel="noopener noreferrer" aria-label="Открыть пост">🔗</a>
-          ` : ""}
-        </div>
-      </div>
-    `;
-
-    worksContainer.appendChild(card);
-  });
-}
-
-function updateUIAfterVote() {
-  const currentVoter = employeeSelect.value;
-
-  works.forEach(record => {
-    const card = worksContainer.querySelector(`[data-work-id="${record.id}"]`);
-    if (!card) return;
-
-    const votesBadge = card.querySelector(".votes-badge");
-    const voteButton = card.querySelector(".vote-button");
-
-    if (votesBadge) {
-      votesBadge.textContent = `❤️ ${getVotesForWork(record.id)}`;
-    }
-
-    if (voteButton) {
-      const authorVote = getAuthorVote(record.fields.Username);
-      const currentWorkVote = hasCurrentWorkVote(record.id);
-
-      if (currentWorkVote) {
-        voteButton.className = "vote-button remove";
-        voteButton.textContent = "Убрать голос";
-        voteButton.disabled = false;
-      } else if (authorVote) {
-        voteButton.className = "vote-button";
-        voteButton.textContent = "За автора уже отдано";
-        voteButton.disabled = true;
-      } else {
-        voteButton.className = "vote-button";
-        voteButton.textContent = "Голосовать";
-        voteButton.disabled = !currentVoter;
-      }
-    }
-  });
-
-  updateCounterDisplay();
-}
-
-function handleCompletionModal() {
-  const finishedEmployeesCount = employees.filter(empName => getEmployeeVotes(empName) >= getEmployeeMaxVotes(empName)).length;
-
-  if (finishedEmployeesCount >= employees.length) {
-    showWinnersModal();
-  } else {
-    clickStage = 0;
-    subClickCount = 0;
-    if (memeImage) memeImage.src = "hate2.jpg";
-    if (healImgBox) healImgBox.style.display = "block";
-    if (ronaldoGrid) {
-      ronaldoGrid.style.display = "none";
-      const cards = ronaldoGrid.querySelectorAll(".uno-card");
-      cards.forEach((c, idx) => {
-        c.className = `uno-card pos-${idx}`;
-      });
-    }
-    if (waitTitle) waitTitle.textContent = "Твой голос учтен!";
-    if (waitText) {
-      waitText.style.display = "block";
-      waitText.innerHTML = "Чья-то нервная система уже готовится к хейту в чате.<br>Да прибудет с вами сила 🫡";
-    }
-    if (healHintBox) {
-      healHintBox.style.display = "flex";
-      healHintBox.className = "heal-hint-box";
-      healHintBox.innerHTML = `
-        <span class="hint-text">Нажми три раза, если хочешь помочь девочкам захиллиться 💅</span>
-        <span class="hint-arrow">👇</span>
-      `;
-    }
-    waitModalOverlay.classList.add("active");
+  function media(files) {
+    const valid=(files||[]).map(f=>({src:url(f.url),video:String(f.type||'').startsWith('video/')})).filter(f=>f.src);
+    if(!valid.length) return '';
+    const cells=valid.map((f,i)=>f.video
+      ? `<div class="video-slide slider-item"><video class="media-frame" ${i?'preload="metadata"':'preload="metadata"'} autoplay muted loop playsinline controls src="${escape(f.src)}"></video><button class="video-sound-button" type="button" aria-label="Включить звук">🔊 Включить звук</button></div>`
+      : `<img class="media-frame slider-item" loading="lazy" src="${escape(f.src)}" alt="Конкурсная работа ${i+1}">`).join('');
+    if(valid.length===1) return `<div class="media-area">${cells}</div>`;
+    return `<div class="media-area slider"><div class="slider-items">${cells}</div><button type="button" class="slider-prev" aria-label="Назад">‹</button><button type="button" class="slider-next" aria-label="Вперёд">›</button></div>`;
   }
-}
-
-function triggerClickFeedback(isWarning = false) {
-  if (!healImgBox) return;
-  healImgBox.classList.remove("click-shake");
-  void healImgBox.offsetWidth;
-  healImgBox.classList.add("click-shake");
-  createMiniPopEffect(isWarning);
-}
-
-function createMiniPopEffect(isWarning) {
-  if (!heartsContainer) return;
-  const emojis = isWarning ? ["💥", "💢", "⚠️", "❌", "🔥"] : ["✨", "💖", "🍻", "⚡", "💅"];
-
-  for (let i = 0; i < 5; i++) {
-    const el = document.createElement("div");
-    el.className = "floating-heart";
-    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    el.style.left = `${40 + (Math.random() * 20 - 10)}%`;
-    el.style.top = `${30 + (Math.random() * 20 - 10)}%`;
-    el.style.animationDuration = `${0.8 + Math.random() * 0.5}s`;
-    heartsContainer.appendChild(el);
-    setTimeout(() => el.remove(), 1200);
+  function render() {
+    const authorMap=authorById(), count=counts(), voter=normalize(chosenName());
+    const own=votes.filter(v=>normalize(v.fields?.['Voter Name'])===voter);
+    const votedIds=new Set(own.flatMap(v=>Array.isArray(v.fields?.['Contest Work'])?v.fields['Contest Work']:[v.fields?.['Contest Work']]));
+    const votedAuthors=new Set([...votedIds].map(id=>authorMap.get(id)).filter(Boolean));
+    const html=works.filter(w=>w.fields?.Username && w.fields?.['Конкурсные работы']?.length).map(w=>{
+      const f=w.fields, id=w.id, author=normalize(f.Username), voted=votedIds.has(id);
+      const disabled=closed || !voter || busy || (!voted && (remaining()<=0 || votedAuthors.has(author)));
+      const label=closed?'Голосование завершено':voted?'Убрать голос':votedAuthors.has(author)?'За автора уже отдано':'Голосовать';
+      const description=f['Описание'] || f['Текст'] || f['Заметка'] || '';
+      const link=url(f['Ссылка на пост']);
+      return `<article class="card" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row"><button type="button" class="vote-button ${voted?'remove':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
+    }).join('');
+    worksNode.innerHTML=html || '<p class="contest-empty">Работ пока нет. Проверьте Airtable.</p>';
+    updateCounter();
   }
-}
-
-if (healImgBox) {
-  healImgBox.addEventListener("click", () => {
-    subClickCount++;
-
-    if (clickStage === 0) {
-      triggerClickFeedback(false);
-      if (subClickCount >= 3) {
-        clickStage = 1;
-        subClickCount = 0;
-
-        healImgBox.classList.add("magic-transition");
-        flashOverlay.classList.add("active");
-
-        setTimeout(() => {
-          memeImage.src = "heal.jpg";
-          if (healHintBox) {
-            healHintBox.innerHTML = `<span>Спасибо 💖🍻</span>`;
-            healHintBox.className = "heal-hint-box healed";
-          }
-        }, 350);
-
-        setTimeout(() => {
-          flashOverlay.classList.remove("active");
-          healImgBox.classList.remove("magic-transition");
-        }, 700);
-
-        createHeartsEffect();
-        return;
-      }
+  function renderWinners(list) {
+    winnerRows=list;
+    showDialog(`<div class="winners-heading">🏆</div><h2 id="contestDialogTitle">Наши победители!</h2><p>Топ-5 авторов по количеству голосов</p><div class="contest-winners">${list.length?list.map(w=>`<div class="winner-item"><span class="winner-rank">${w.rank} место</span><button type="button" class="copy-user-btn" data-copy="@${escape(w.username)}">@${escape(w.username)}</button><span class="winner-votes">❤️ ${w.count}</span>${url(w.link)?`<button type="button" class="copy-post-btn" data-copy="${escape(url(w.link))}">Копировать ссылку</button><a href="${escape(url(w.link))}" target="_blank" rel="noopener noreferrer" class="winner-open" aria-label="Открыть пост">↗</a>`:''}</div>`).join(''):'<p>Пока никто не получил голосов.</p>'}</div><p class="winner-help">Ник и ссылку можно копировать по отдельности.</p>`);
+  }
+  async function refresh() {
+    const [state,w,v]=await Promise.all([api('/api/state'),api('/api/works'),api('/api/votes')]);
+    closed=state.closed; works=w.records||[]; votes=uniqueVotes(v.records||[]);
+    setNames(state.names||[]); render();
+    if(closed) { const result=await api('/api/winners'); winnerRows=result.winners||[]; winnersButton.hidden=false; }
+  }
+  addButton.addEventListener('click',()=>{
+    showDialog('<h2 id="contestDialogTitle">Добавить своё имя</h2><form id="contest-register"><label for="contest-new-name">Как вас зовут?</label><input id="contest-new-name" name="name" maxlength="60" minlength="2" required autocomplete="name" placeholder="Ваше имя"><button type="submit" class="vote-button">Добавить</button><p class="contest-form-message" aria-live="polite"></p></form>');
+    $('contest-register').addEventListener('submit',async e=>{
+      e.preventDefault(); const btn=e.currentTarget.querySelector('button'); const name=e.currentTarget.elements.name.value.trim();btn.disabled=true;
+      try {await post('/api/register',{name});await refresh(); select.value=name;select.dispatchEvent(new Event('change'));closeDialog();notify('Имя добавлено! У вас 5 голосов.');}
+      catch(err){e.currentTarget.querySelector('.contest-form-message').textContent=err.message;btn.disabled=false;}
+    });
+  });
+  finishButton.addEventListener('click',()=>{
+    showDialog('<h2 id="contestDialogTitle">Завершить голосование?</h2><p>После завершения новые голоса и отмены будут заблокированы. Результаты увидят все.</p><form id="contest-finish"><label for="contest-pin">PIN администратора</label><input id="contest-pin" name="pin" type="password" autocomplete="off" required placeholder="Введите PIN"><button type="submit" class="vote-button">Подтвердить завершение</button><p class="contest-form-message" aria-live="polite"></p></form>');
+    $('contest-finish').addEventListener('submit',async e=>{
+      e.preventDefault();const btn=e.currentTarget.querySelector('button'); btn.disabled=true;
+      try {const result=await post('/api/finish',{pin:e.currentTarget.elements.pin.value});await refresh();renderWinners(result.winners||[]);}
+      catch(err){e.currentTarget.querySelector('.contest-form-message').textContent=err.message;btn.disabled=false;}
+    });
+  });
+  winnersButton.addEventListener('click',async()=>{try{renderWinners((await api('/api/winners')).winners||[]);}catch(e){notify(e.message);}});
+  select.addEventListener('change',()=>{localStorage.setItem('contest-voter-name',chosenName());finishButton.hidden=normalize(chosenName())!=='арина'||closed;render();});
+  worksNode.addEventListener('click',async e=>{
+    const soundButton=e.target.closest('.video-sound-button');
+    if(soundButton){
+      const video=soundButton.closest('.video-slide')?.querySelector('video');
+      if(!video)return;
+      video.muted=!video.muted;
+      soundButton.textContent=video.muted?'🔊 Включить звук':'🔇 Выключить звук';
+      soundButton.setAttribute('aria-label',video.muted?'Включить звук':'Выключить звук');
+      if(video.paused) video.play().catch(()=>notify('Нажмите ▶ на видео, чтобы начать просмотр.'));
       return;
     }
-
-    if (clickStage === 1) {
-      triggerClickFeedback(true);
-      if (subClickCount >= 3) {
-        clickStage = 2;
-        subClickCount = 0;
-
-        memeImage.src = "barbie.jpg";
-        if (healHintBox) {
-          healHintBox.innerHTML = `<span>Ты что наделал? 🥲💣</span>`;
-          healHintBox.className = "heal-hint-box warning";
-        }
-
-        setTimeout(() => {
-          triggerExplosionAndUNO();
-        }, 1300);
-      }
-      return;
-    }
+    const toggle=e.target.closest('.text-toggle-btn');
+    if(toggle){const t=toggle.previousElementSibling;const expanded=t.classList.toggle('expanded');toggle.textContent=expanded?'Свернуть ▲':'Читать полностью ▼';return;}
+    const arrow=e.target.closest('.slider-next,.slider-prev');
+    if(arrow){const slider=arrow.closest('.slider'),box=slider.querySelector('.slider-items');const direction=arrow.classList.contains('slider-next')?1:-1;box.scrollBy({left:direction*box.clientWidth,behavior:'smooth'});return;}
+    const btn=e.target.closest('[data-vote]');if(!btn||busy||closed)return;
+    const workId=btn.dataset.vote;busy=true;render();
+    try {
+      const removing=votes.some(v=>normalize(v.fields?.['Voter Name'])===normalize(chosenName())&&(v.fields?.['Contest Work']||[]).includes(workId));
+      await post('/api/vote',{voterName:chosenName(),contestWork:workId,action:removing?'delete':'add'});
+      const result=await api('/api/votes');votes=uniqueVotes(result.records||[]);
+      notify(removing?'Голос отменён':'Голос учтён!');
+    }catch(err){notify(err.message);try{votes=uniqueVotes((await api('/api/votes')).records||[]);}catch{}}
+    finally{busy=false;render();}
   });
-}
-
-if (ronaldoGrid) {
-  ronaldoGrid.addEventListener("click", () => {
-    if (clickStage === 3) {
-      const cards = Array.from(ronaldoGrid.querySelectorAll(".uno-card"));
-      const topCard = cards.find(c => c.classList.contains("pos-0"));
-
-      if (topCard) {
-        topCard.classList.add("swapping");
-
-        setTimeout(() => {
-          cards.forEach(c => {
-            let currentPos = parseInt(c.dataset.pos);
-            let newPos = (currentPos - 1 + cards.length) % cards.length;
-            c.dataset.pos = newPos;
-            c.className = `uno-card pos-${newPos}`;
-          });
-          topCard.classList.remove("swapping");
-        }, 200);
-      }
-    }
+  overlay.addEventListener('click',async e=>{
+    const b=e.target.closest('[data-copy]');if(!b)return;
+    try{await navigator.clipboard.writeText(b.dataset.copy);notify('Скопировано!');}
+    catch{notify('Не удалось скопировать — попробуйте открыть сайт по HTTPS.');}
   });
-}
-
-function triggerExplosionAndUNO() {
-  if (explosionOverlay) explosionOverlay.classList.add("active");
-  if (waitCardBox) waitCardBox.classList.add("shake");
-
-  setTimeout(() => {
-    clickStage = 3;
-    if (healImgBox) healImgBox.style.display = "none";
-    if (healHintBox) healHintBox.style.display = "none";
-
-    if (waitTitle) waitTitle.textContent = "Сила ИИндии теперь с тобой!";
-    if (waitText) waitText.style.display = "none";
-
-    if (ronaldoGrid) ronaldoGrid.style.display = "block";
-  }, 700);
-
-  setTimeout(() => {
-    if (explosionOverlay) explosionOverlay.classList.remove("active");
-    if (waitCardBox) waitCardBox.classList.remove("shake");
-  }, 1600);
-}
-
-function createHeartsEffect() {
-  if (!heartsContainer) return;
-  heartsContainer.innerHTML = "";
-
-  const emojis = ["❤️", "💖", "💕", "🍻", "✨", "🥰"];
-
-  for (let i = 0; i < 24; i++) {
-    const heart = document.createElement("div");
-    heart.className = "floating-heart";
-    heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    heart.style.left = `${Math.random() * 85 + 5}%`;
-    heart.style.animationDelay = `${Math.random() * 0.5}s`;
-    heart.style.animationDuration = `${1.8 + Math.random() * 0.8}s`;
-    heartsContainer.appendChild(heart);
-  }
-}
-
-// ИДЕАЛЬНЫЙ ПОП-АП ПОБЕДИТЕЛЕЙ (БЕЗ СЕРДЕЧЕК И БЕЗ ЦИФР ГОЛОСОВ)
-window.showWinnersModal = function() {
-  const top10 = [
-    { author: "BladeTag", postLink: "https://t.me/qq1win/5273481" },
-    { author: "s3x1r", postLink: "https://t.me/qq1win/5273675" },
-    { author: "Jeka_23", postLink: "https://t.me/qq1win/5274743" },
-    { author: "Felice_Kr", postLink: "https://t.me/qq1win/5271739" },
-    { author: "snchzs887", postLink: "https://t.me/qq1win/5272129" },
-    { author: "kkaaaooo", postLink: "https://t.me/qq1win/5272269" },
-    { author: "RussianTelevisionTV", postLink: "https://t.me/qq1win/5272883" },
-    { author: "timmimimmi", postLink: "https://t.me/qq1win/5273144" },
-    { author: "Lev_Borisovv", postLink: "https://t.me/qq1win/5274744" },
-    { author: "kksskkl", postLink: "https://t.me/qq1win/5271902" }
-  ];
-
-  if (winnersList) {
-    winnersList.innerHTML = "";
-
-    top10.forEach((item, index) => {
-      const el = document.createElement("div");
-      el.className = "winner-item";
-      el.innerHTML = `
-        <div class="winner-rank">${index + 1}</div>
-        <button class="copy-user-btn" data-copy-user="@${item.author}">
-          @${item.author}
-        </button>
-        <div class="winner-actions">
-          <button class="copy-post-btn" data-copy-link="${item.postLink}">
-            🔗 Скопировать ссылку
-          </button>
-        </div>
-      `;
-      winnersList.appendChild(el);
-    });
-  }
-
-  if (modalOverlay) {
-    modalOverlay.classList.add("active");
-  }
-};
-
-function checkHashUrl() {
-  if (window.location.hash === "#winners") {
-    showWinnersModal();
-  }
-}
-
-window.addEventListener("hashchange", checkHashUrl);
-
-document.addEventListener("click", async e => {
-  const userBtn = e.target.closest("[data-copy-user]");
-  if (userBtn) {
-    const username = userBtn.dataset.copyUser;
-    await navigator.clipboard.writeText(username).catch(() => {});
-    showToast(`Ник ${username} скопирован!`);
-    return;
-  }
-
-  const linkBtn = e.target.closest("[data-copy-link]");
-  if (linkBtn) {
-    const link = linkBtn.dataset.copyLink;
-    await navigator.clipboard.writeText(link).catch(() => {});
-    showToast("Ссылка на пост скопирована!");
-    return;
-  }
-
-  if (e.target.classList.contains("text-toggle-btn")) {
-    const btn = e.target;
-    const textBlock = btn.previousElementSibling;
-    const isExpanded = textBlock.classList.toggle("expanded");
-    btn.textContent = isExpanded ? "Свернуть ▲" : "Читать полностью ▼";
-    return;
-  }
-
-  if (e.target.classList.contains("slider-next") || e.target.classList.contains("slider-prev")) {
-    const slider = e.target.closest(".slider");
-    const items = slider.querySelectorAll(".slider-item");
-    let current = [...items].findIndex(item => item.classList.contains("active"));
-
-    items[current].classList.remove("active");
-
-    if (e.target.classList.contains("slider-next")) {
-      current = (current + 1) % items.length;
-    } else {
-      current = (current - 1 + items.length) % items.length;
-    }
-
-    items[current].classList.add("active");
-    items[current].scrollIntoView({ behavior: "smooth", block: "nearest", inline: "start" });
-    return;
-  }
-
-  if (!e.target.classList.contains("vote-button")) return;
-
-  const scrollPosition = window.scrollY;
-
-  const button = e.target;
-  const voterName = employeeSelect.value;
-  const contestWork = button.dataset.work;
-
-  if (!voterName) return;
-
-  const removing = button.classList.contains("remove");
-  const maxAllowed = getEmployeeMaxVotes(voterName);
-
-  if (!removing && getEmployeeVotes() >= maxAllowed) {
-    handleCompletionModal();
-    return;
-  }
-
-  if (voteAnimBadge) {
-    voteAnimBadge.textContent = removing ? "+1" : "-1";
-    voteAnimBadge.className = `vote-anim-badge ${removing ? "anim-remove" : "anim-add"}`;
-    setTimeout(() => { voteAnimBadge.className = "vote-anim-badge"; }, 800);
-  }
-
-  if (removing) {
-    votes = votes.filter(vote => {
-      const workField = vote.fields["Contest Work"];
-      const isMatch = Array.isArray(workField) ? workField.includes(contestWork) : (workField === contestWork);
-      return !(vote.fields["Voter Name"] === voterName && isMatch);
-    });
-  } else {
-    votes.push({
-      id: "temp_" + Date.now(),
-      fields: {
-        "Voter Name": voterName,
-        "Contest Work": [contestWork]
-      }
-    });
-  }
-
-  updateUIAfterVote();
-  window.scrollTo({ top: scrollPosition, behavior: 'instant' });
-
-  if (getEmployeeVotes() === maxAllowed && !removing) {
-    setTimeout(handleCompletionModal, 300);
-  }
-
-  try {
-    await fetch("/api/vote", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        voterName,
-        contestWork,
-        action: removing ? "delete" : "add"
-      })
-    });
-    
-    setTimeout(async () => {
-      await loadVotes();
-      updateUIAfterVote();
-    }, 800);
-
-  } catch (err) {
-    console.error("Ошибка сохранения голоса:", err);
-  }
-});
-
-function updateCounterDisplay() {
-  const counter = document.getElementById("votesLeft");
-  const usedVotes = getEmployeeVotes();
-  const maxAllowed = getEmployeeMaxVotes(employeeSelect.value);
-  const remaining = Math.max(0, maxAllowed - usedVotes);
-
-  if (employeeSelect.value) {
-    if (counter) counter.textContent = `Ваши голоса: ${usedVotes}/${maxAllowed}`;
-    if (stickyCounterText) stickyCounterText.innerHTML = `Осталось голосов: <span>${remaining}</span>`;
-    if (stickyCounter) stickyCounter.classList.add("visible");
-  } else {
-    if (counter) counter.textContent = "";
-    if (stickyCounter) stickyCounter.classList.remove("visible");
-  }
-}
-
-if (employeeSelect) {
-  employeeSelect.addEventListener("change", () => {
-    renderWorks();
-    updateCounterDisplay();
-  });
-}
-
-if (modalClose) {
-  modalClose.addEventListener("click", () => modalOverlay.classList.remove("active"));
-}
-if (modalOverlay) {
-  modalOverlay.addEventListener("click", (e) => {
-    if (e.target === modalOverlay) modalOverlay.classList.remove("active");
-  });
-}
-
-(async () => {
-  await loadVotes();
-  await loadWorks();
+  // Remove legacy modals/easter eggs from the previous version.
+  for(const id of ['waitModalOverlay','modalOverlay']) $(id)?.remove();
+  refresh().catch(err=>{console.error(err);worksNode.innerHTML='<p class="contest-empty">Не удалось загрузить конкурсные работы: '+escape(err.message)+'</p>';notify('Ошибка загрузки. Проверьте настройки Airtable.');});
 })();
