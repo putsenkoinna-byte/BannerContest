@@ -1,20 +1,17 @@
+import { listAll, VOTES_TABLE_ID } from "./_airtable.js";
+
 export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  const token = process.env.AIRTABLE_TOKEN;
-
-  const baseId = "appSxQXkQdS7Z9V6b";
-  const tableId = "tblbzFEy8wRU63bv1";
-
-  const response = await fetch(
-    `https://api.airtable.com/v0/${baseId}/${tableId}`,
-    {
-      headers:{
-        Authorization:`Bearer ${token}`
-      }
-    }
-  );
-
-  const data = await response.json();
-
-  res.status(200).json(data);
+  try {
+    const records = await listAll(VOTES_TABLE_ID);
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json({ records });
+  } catch (error) {
+    console.error("votes:", error);
+    return res.status(502).json({ error: "Не удалось загрузить голоса" });
+  }
 }
