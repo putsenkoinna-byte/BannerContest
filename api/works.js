@@ -1,23 +1,17 @@
+import { listAll, WORKS_TABLE_ID } from "./_airtable.js";
+
 export default async function handler(req, res) {
-
-  const token = process.env.AIRTABLE_TOKEN;
-
-  if (!token) {
-    return res.status(500).json({
-      error: "TOKEN NOT FOUND"
-    });
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const response = await fetch(
-    "https://api.airtable.com/v0/appSxQXkQdS7Z9V6b/tblw7e0Mp2HGsym5n",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }
-  );
-
-  const data = await response.json();
-
-  res.status(200).json(data);
+  try {
+    const records = await listAll(WORKS_TABLE_ID);
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).json({ records });
+  } catch (error) {
+    console.error("works:", error);
+    return res.status(502).json({ error: "Не удалось загрузить работы" });
+  }
 }
