@@ -104,51 +104,42 @@ select:focus-visible, button:focus-visible, a:focus-visible {
 }
 .toast.active { transform:translateX(-50%) translateY(0); }
 
-.modal-overlay {
-  position:fixed!important; inset:0!important; width:100%!important; height:100dvh!important;
-  background:rgba(0,0,0,.85)!important; display:flex!important; align-items:center!important;
-  justify-content:center!important; opacity:0; visibility:hidden; pointer-events:none;
-  transition:opacity .25s ease,visibility .25s ease; z-index:99999!important;
-  padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))!important;
-  overflow-y:auto!important; backdrop-filter:blur(6px);
+/* === Конкурс 2.0: без обрезания изображений и видео === */
+.media-area { position:relative; width:100%; background:#0b0c12; }
+.card .media-area img, .card .media-area video {
+  display:block; width:100%; height:clamp(300px,34vw,460px);
+  object-fit:contain; background:#0b0c12; aspect-ratio:auto;
 }
-.modal-overlay.active { opacity:1!important; visibility:visible; pointer-events:auto!important; }
-.modal-content {
-  background:#161822!important; border:1px solid var(--border)!important; border-radius:24px!important;
-  padding:36px 24px 28px!important; width:100%!important; max-width:520px!important;
-  max-height:min(85dvh,760px)!important; overflow-y:auto!important; position:relative!important;
-  margin:auto!important; box-shadow:0 25px 50px rgba(0,0,0,.7)!important; text-align:center!important;
-  overscroll-behavior:contain;
-}
-.modal-content::-webkit-scrollbar{width:6px}.modal-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.modal-content button.close-btn,.modal-content .close,#modalClose {
-  position:absolute!important; top:14px!important; right:14px!important; width:36px!important; height:36px!important;
-  display:grid!important; place-items:center!important; background:rgba(255,255,255,.08)!important; color:#fff!important;
-  border:0!important; border-radius:50%!important; font-size:16px!important; cursor:pointer!important; z-index:10!important;
-}
-.modal-content button.close-btn:hover,.modal-content .close:hover,#modalClose:hover{background:rgba(255,255,255,.18)!important}
-.modal-content img,.modal-overlay img:not(.card img),.modal-content svg,.modal-overlay svg {
-  width:80px!important;height:80px!important;max-width:80px!important;max-height:80px!important;
-  min-width:80px!important;min-height:80px!important;margin:0 auto 16px!important;display:block!important;object-fit:contain!important;
-}
-.winner-item { display:flex!important;align-items:center!important;justify-content:space-between!important;background:var(--surface-2)!important;padding:10px 14px!important;border-radius:12px!important;margin-bottom:8px!important;gap:10px!important;text-align:left!important; }
-.winner-rank{font-weight:700;font-size:15px;color:#818cf8;min-width:22px}
-.copy-user-btn{flex:1;min-width:0;text-align:left;background:transparent;color:#fff;border:0;font-size:14px;font-weight:500;cursor:pointer;padding:6px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.copy-user-btn:hover{color:#818cf8}.winner-actions{display:flex;align-items:center;gap:10px}
-.copy-post-btn{background:var(--border);color:#fff;border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:12px;white-space:nowrap}.copy-post-btn:hover{background:var(--primary-hover)}
+.slider-items {scroll-snap-type:x mandatory; overflow-x:auto;}
+.slider-item {min-width:100%; flex:0 0 100%; scroll-snap-align:center;}
+.slider .media-frame {flex-shrink:0;}
+.contest-tools {display:flex; flex-wrap:wrap; gap:8px; margin:-12px 0 20px;}
+.small-tool-btn {border:1px solid #41465f; background:#292d42; color:#fff; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600; min-height:42px;}
+.small-tool-btn:hover {background:#404666;}
+.admin-button {background:#4f46e5;}
+[hidden] {display:none!important;}
+.contest-dialog-overlay {position:fixed; inset:0; z-index:200000; background:rgba(0,0,0,.82); display:flex; justify-content:center; align-items:center; padding:16px; backdrop-filter:blur(5px);}
+.contest-dialog {position:relative; width:min(100%,600px); max-height:90dvh; overflow-y:auto; border:1px solid #353a55; border-radius:20px; background:#171925; padding:30px 20px 22px; color:#fff; box-shadow:0 18px 60px #000a;}
+.contest-dialog h2 {font-size:23px; margin:0 40px 12px 0;}
+.contest-dialog p {line-height:1.5; color:#cbd0e1;}
+.contest-dialog-close {position:absolute;top:10px;right:12px;background:#303349;color:#fff;border:0;border-radius:50%;width:34px;height:34px;font-size:24px;cursor:pointer;}
+.contest-dialog label {display:block; color:#c4c7da; margin:14px 0 8px;}
+.contest-dialog input {width:100%;padding:12px 14px;border:1px solid #535975;border-radius:10px;background:#222539;color:#fff;font-size:16px;margin-bottom:14px;}
+.contest-dialog form .vote-button {width:100%;}
+.contest-form-message {color:#ff9ca5!important; min-height:20px;}
+.winners-heading {font-size:50px;text-align:center; margin-bottom:6px;}
+.contest-winners {display:flex;flex-direction:column;gap:9px;margin:16px 0;}
+.contest-winners .winner-item {display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0!important;}
+.contest-winners .winner-rank {min-width:72px;}
+.contest-winners .copy-user-btn {font-size:15px;}
+.winner-votes {white-space:nowrap;font-size:13px;color:#f4b3c2;}
+.winner-open {padding:7px 10px;border-radius:7px;color:white;background:#343956;text-decoration:none;}
+.winner-help {font-size:13px;}
+.contest-empty {color:#ffb4b4;padding:20px;background:#25202a;border-radius:12px;}
+@media(max-width:560px){.card .media-area img,.card .media-area video{height:360px;max-height:75dvh;aspect-ratio:auto;object-fit:contain;}.contest-tools{margin-top:-8px}.contest-winners .winner-item{gap:6px!important}.contest-winners .copy-post-btn{font-size:12px}.contest-winners .copy-post-btn::after{content:none}}
 
-@keyframes clickShake{0%{transform:scale(1) rotate(0)}25%{transform:scale(.95) rotate(-3deg)}50%{transform:scale(1.05) rotate(3deg)}75%{transform:scale(.98) rotate(-1.5deg)}100%{transform:scale(1) rotate(0)}}
-.click-shake{animation:clickShake .3s ease-in-out}
-
-@media (max-width:560px){
-  .container{padding:14px 12px 88px}
-  #works{gap:14px}
-  .card img,.card video{height:auto;aspect-ratio:1/1;object-fit:cover}
-  .modal-content{border-radius:20px!important;padding:34px 16px 20px!important}
-  .winner-item{padding:10px!important}
-  .copy-post-btn{padding:8px 9px;font-size:0}
-  .copy-post-btn::after{content:"🔗";font-size:16px}
-}
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
-}
+/* Звук включается пользователем: браузеры блокируют autoplay со звуком. */
+.video-slide {position:relative; min-width:100%; width:100%; background:#0b0c12;}
+.video-sound-button {position:absolute; z-index:5; top:12px; right:12px; padding:9px 12px; border:1px solid rgba(255,255,255,.25); border-radius:10px; background:rgba(15,16,22,.88); color:#fff; font-size:13px; font-weight:600; cursor:pointer; backdrop-filter:blur(6px);}
+.video-sound-button:hover {background:#373b54;}
+.video-sound-button:focus-visible {outline:2px solid #a5b4fc; outline-offset:2px;}
