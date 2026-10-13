@@ -27,8 +27,18 @@
     localStorage.setItem(favoriteKey(), JSON.stringify([...favorites]));
     updateFavoriteButtons();
   }
+  function clearCompletedFavorites() {
+    if (!chosenName() || remaining() !== 0) return false;
+    favorites.clear();
+    choiceIds.clear();
+    try { localStorage.removeItem(favoriteKey()); } catch {}
+    updateFavoriteButtons();
+    return true;
+  }
+
   function updateFavoriteButtons() {
     favoritesButton.textContent = `☆ Мои отмеченные (${[...favorites].filter(id => !isBlocked(works.find(w => w.id === id))).length})`;
+    favoritesButton.hidden = closed || !chosenName() || remaining() === 0;
     for (const b of worksNode.querySelectorAll('[data-favorite]')) {
       const saved = favorites.has(b.dataset.favorite);
       b.classList.toggle('is-marked', saved);
@@ -125,7 +135,7 @@
       const label=blocked?'Голосование недоступно':closed?'Голосование завершено':voted?'Убрать голос':votedAuthors.has(author)?'За автора уже отдано':'Голосовать';
       const description=f['Описание'] || f['Текст'] || f['Заметка'] || '';
       const link=url(f['Ссылка на пост']);
-      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row">${!blocked?`<button type="button" class="favorite-button" data-favorite="${escape(id)}" aria-pressed="${favorites.has(id)}">${favorites.has(id)?'★ Отмечено':'☆ Отметить'}</button>`:''}<button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
+      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row">${!blocked && !closed && remaining()>0?`<button type="button" class="favorite-button" data-favorite="${escape(id)}" aria-pressed="${favorites.has(id)}">${favorites.has(id)?'★ Отмечено':'☆ Отметить'}</button>`:''}<button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
     }).join('');
     worksNode.innerHTML=html || '<p class="contest-empty">Работ пока нет. Проверьте Airtable.</p>';
     updateCounter();
@@ -188,7 +198,8 @@
       return Number(isLast(a))-Number(isLast(b));
     });
     votes=uniqueVotes(v.records||[]);
-    setNames(state.names||[]); loadFavorites(); render();
+    setNames(state.names||[]); loadFavorites(); clearCompletedFavorites(); render();
+    if (!closed && !votes.length) { winnerRows=[]; winnersButton.hidden=true; }
     if(closed) { const result=await api('/api/winners'); winnerRows=result.winners||[]; winnersButton.hidden=false; }
   }
   addButton.addEventListener('click',()=>{
@@ -282,6 +293,7 @@
     } catch (err) { lastError = lastError || 'Не удалось сверить голоса. Обновите страницу.'; }
     busy = false;
     choiceIds.clear();
+    if (!lastError) clearCompletedFavorites();
     render();
     if (saved === requested.length && !lastError) {
       closeDialog();
@@ -301,7 +313,7 @@
     });
   });
   winnersButton.addEventListener('click',async()=>{try{renderWinners((await api('/api/winners')).winners||[]);}catch(e){notify(e.message);}});
-  select.addEventListener('change',()=>{localStorage.setItem('contest-voter-name',chosenName());loadFavorites();finishButton.hidden=closed;render();});
+  select.addEventListener('change',()=>{localStorage.setItem('contest-voter-name',chosenName());loadFavorites();clearCompletedFavorites();finishButton.hidden=closed;render();});
   worksNode.addEventListener('click',async e=>{
     const soundButton=e.target.closest('.video-sound-button');
     if(soundButton){
@@ -334,6 +346,11 @@
     updateVoteWidgets();pulse(btn);
     try {
       await post('/api/vote',{voterName:chosenName(),contestWork:workId,action:removing?'delete':'add'});
+      // Reconcile with Airtable before clearing favorites; optimistic fifth vote alone is insufficient.
+      if (!removing && remaining() === 0) {
+        try { votes=uniqueVotes((await api('/api/votes')).records||[]); clearCompletedFavorites(); }
+        catch (syncError) { console.warn('Не удалось подтвердить пятый голос',syncError); }
+      }
       notify(removing?'Голос отменён':'Голос учтён!');
       // Не задерживаем кнопку вторым запросом в Airtable. Сверяем данные фоном.
       api('/api/votes').then(result=>{
