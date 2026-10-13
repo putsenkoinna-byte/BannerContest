@@ -263,27 +263,29 @@ body.access-locked > .toast { display:none !important; }
 .access-panel button:disabled{opacity:.7;cursor:wait}
 .access-panel .access-error{color:#fca5a5;font-size:13px;min-height:20px;margin:12px 0 0}
 
-/* V9: мягкий watermark 1win, без дополнительного изображения */
+/* V10: branded, repeating watermark across every viewport width */
 body { position:relative; isolation:isolate; }
-body.access-granted::before {
-  content:"1win"; position:fixed; inset:auto auto 4vh -4vw;
-  z-index:-1; pointer-events:none; user-select:none;
-  font-size:clamp(115px,23vw,440px); line-height:1;
-  font-weight:900; letter-spacing:-.09em; color:rgba(144,138,255,.055);
-  transform:rotate(-12deg); white-space:nowrap;
-}
-.access-wall { isolation:isolate; }
+body.access-granted::before,
 .access-wall::before {
-  content:"1win"; position:fixed; inset:12% auto auto 50%;
-  z-index:-1; transform:translateX(-50%) rotate(-13deg);
-  font-weight:900; letter-spacing:-.1em; font-size:clamp(130px,35vw,620px);
-  line-height:1; white-space:nowrap; pointer-events:none; user-select:none;
-  color:rgba(172,160,255,.12);
+  content:"";
+  pointer-events:none;
+  position:fixed;
+  inset:0;
+  background-image:url("onewin_logo.png");
+  background-size:clamp(170px,23vw,300px) auto;
+  background-repeat:repeat;
+  background-position:center 4%;
+  opacity:.055;
+  z-index:0;
+  transform:none;
 }
-.access-panel { position:relative; backdrop-filter:blur(12px); background:rgba(26,28,40,.94); }
+body.access-granted > .header,
+body.access-granted > .container,
+body.access-granted > .sticky-counter {position:relative;z-index:1;}
+.access-wall {isolation:isolate;}
+.access-panel {position:relative;z-index:1;background:rgba(26,28,40,.95);}
 @media(max-width:640px){
- body.access-granted::before {font-size:46vw;left:-7vw;bottom:15vh;color:rgba(144,138,255,.035)}
- .access-wall::before {top:18%;font-size:47vw;color:rgba(172,160,255,.085)}
- .access-panel{backdrop-filter:none;background:#1a1c28}
+ body.access-granted::before,.access-wall::before{background-size:170px auto;opacity:.045;}
+ .access-panel{backdrop-filter:none;}
 }
 @media(prefers-reduced-motion:reduce){.access-panel{backdrop-filter:none}}
