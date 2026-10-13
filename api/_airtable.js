@@ -3,7 +3,7 @@ export const VOTES_TABLE_ID = process.env.AIRTABLE_VOTES_TABLE_ID || 'tblbzFEy8w
 export const WORKS_TABLE_ID = process.env.AIRTABLE_WORKS_TABLE_ID || 'tblw7e0Mp2HGsym5n';
 export const VOTERS_TABLE_ID = process.env.AIRTABLE_VOTERS_TABLE_ID;
 export const SETTINGS_TABLE_ID = process.env.AIRTABLE_SETTINGS_TABLE_ID;
-export const DEFAULT_VOTERS = ['Рома', 'Вика', 'Арина', 'Карина'];
+export const DEFAULT_VOTERS = ['Рома', 'Вика', 'Арина', 'Карина', 'Андрей'];
 export const MAX_VOTES = 5;
 export const normalize = s => String(s || '').trim().replace(/\s+/g, ' ');
 export const key = s => normalize(s).replace(/^@+/, '').toLocaleLowerCase('ru');
