@@ -302,3 +302,28 @@ body.access-granted::before, .access-wall::before {
     opacity:.018;
   }
 }
+
+/* V12: крупный просмотр отмеченных работ */
+.favorite-open-preview{display:block;border:0;background:transparent;padding:0;cursor:zoom-in;flex:none;border-radius:9px;}
+.favorite-row .favorite-open-preview img,.favorite-row .favorite-open-preview .favorite-placeholder{display:block;width:70px!important;height:75px!important;min-width:70px!important;max-width:70px!important;min-height:75px!important;max-height:75px!important;object-fit:contain;}
+.favorite-name-preview{background:none;border:0;color:inherit;text-align:left;padding:0;cursor:pointer;display:grid;gap:4px;min-width:0;}
+.favorite-name-preview small{color:#b5acff;font-size:11px;}
+.favorite-preview-top{display:flex;justify-content:space-between;gap:12px;align-items:center;color:#a9abc2;margin-right:38px;font-size:13px;}
+.favorite-back{color:#cdc8ff;background:transparent;border:0;padding:7px 0;cursor:pointer;font-size:14px;}
+.favorite-preview h2{margin:12px 0 16px;}
+.contest-dialog:has(.favorite-preview){width:min(100%,880px);}
+.favorite-preview-media{background:#0d0e17;border-radius:14px;overflow:hidden;}
+.favorite-preview-media .media-area{width:100%;}
+.favorite-preview-media .media-frame{width:100%;height:auto;max-height:62dvh;min-height:180px;object-fit:contain;}
+.favorite-preview-media .slider-items{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:thin;}
+.favorite-preview-media .slider-item{scroll-snap-align:start;flex:0 0 100%;width:100%;object-fit:contain;}
+.favorite-preview-media .video-slide{position:relative;}
+.favorite-preview-media video{display:block;max-width:100%;}
+.favorite-preview-description{white-space:pre-wrap;overflow-wrap:anywhere;margin:14px 0;}
+.favorite-preview-link{display:inline-block;margin:10px 0;color:#b7b2ff;}
+.favorite-preview-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px;}
+.favorite-preview-actions button{min-height:46px;}
+.favorite-preview-navigation{display:flex;justify-content:space-between;gap:10px;margin-top:18px;}
+.favorite-preview-navigation button{border:1px solid #555576;background:#282a40;color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;}
+.favorite-preview-navigation button:disabled{opacity:.35;cursor:default;}
+@media(max-width:600px){.favorite-preview-actions{grid-template-columns:1fr;}.favorite-preview-media .media-frame{max-height:53dvh;}.favorite-row .favorite-open-preview img,.favorite-row .favorite-open-preview .favorite-placeholder{width:56px!important;min-width:56px!important;max-width:56px!important;height:63px!important;min-height:63px!important;max-height:63px!important;}}
