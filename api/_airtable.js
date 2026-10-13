@@ -44,36 +44,31 @@ export async function listAll(tableId) {
 export const getSnapshotKey = votes => 'contest|' + votes.map(v => v.id).sort().join(',');
 export async function getClosedState() {
   const rows = await listAll(SETTINGS_TABLE_ID);
-  const row = rows.find(r => {
+  const states = rows.filter(r => {
     const value = String(r.fields?.Key || '');
     return value === 'contest' || value.startsWith('contest|');
   });
-  if (!row?.fields?.Closed) return { closed: false, record: row };
+  // Prefer the most recent contest state if there are duplicate settings records.
+  const ordered = [...states].sort((a,b) => String(b.createdTime||'').localeCompare(String(a.createdTime||'')));
+  const active = ordered.filter(r => Boolean(r.fields?.Closed));
+  if (!active.length) return {closed:false,record:ordered[0]};
 
-  const rawKey = String(row.fields?.Key || '');
-  const hasSnapshot = rawKey.startsWith('contest|');
-  const savedIds = hasSnapshot ? rawKey.slice('contest|'.length).split(',').filter(Boolean) : [];
-
-  // Earlier versions recorded Closed only; they did not record a snapshot.
-  // Such an old closure cannot be matched to removed votes, so reset once.
-  if (!hasSnapshot) {
-    await airtable(`${SETTINGS_TABLE_ID}/${row.id}`, {
-      method: 'PATCH', body: JSON.stringify({ fields: { Key: 'contest', Closed: false } })
-    });
-    return { closed: false, record: { ...row, fields: { ...row.fields, Closed: false } } };
+  const currentVotes = await listAll(VOTES_TABLE_ID);
+  const currentIds = new Set(currentVotes.map(v=>v.id));
+  // Each closed record must be a valid snapshot with every original vote still present.
+  const invalid = active.some(r=>{
+    const k=String(r.fields?.Key||'');
+    if (!k.startsWith('contest|')) return true;
+    const saved=k.slice('contest|'.length).split(',').filter(Boolean);
+    return !saved.length || currentIds.size===0 || saved.some(id=>!currentIds.has(id));
+  });
+  if (invalid) {
+    await Promise.all(active.map(r => airtable(`${SETTINGS_TABLE_ID}/${r.id}`, {
+      method:'PATCH', body:JSON.stringify({fields:{Key:'contest',Closed:false}})
+    })));
+    return {closed:false,record:ordered[0]};
   }
-
-  const current = new Set((await listAll(VOTES_TABLE_ID)).map(v => v.id));
-  // A closed contest with zero current votes must always reopen.
-  // This also fixes old closed snapshots whose saved ID list was empty.
-  const deleted = current.size === 0 || savedIds.some(id => !current.has(id));
-  if (deleted) {
-    await airtable(`${SETTINGS_TABLE_ID}/${row.id}`, {
-      method: 'PATCH', body: JSON.stringify({ fields: { Key: 'contest', Closed: false } })
-    });
-    return { closed: false, record: { ...row, fields: { ...row.fields, Key: 'contest', Closed: false } } };
-  }
-  return { closed: true, record: row };
+  return {closed:true,record:active[0]};
 }
 export async function getVoterNames() {
   const rows = await listAll(VOTERS_TABLE_ID);
