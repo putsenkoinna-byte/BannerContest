@@ -9,6 +9,7 @@
   let works = [], votes = [], closed = false, busy = false, winnerRows = [];
   let pendingVoteId = null;
   let lastRefreshId = 0;
+  let voteRevision = 0;
   const normalize = s => String(s || '').trim().replace(/^@+/, '').toLocaleLowerCase('ru');
   const escape = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const url = s => { try { const u = new URL(String(s)); return ['https:','http:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } };
@@ -95,7 +96,7 @@
       const label=closed?'Голосование завершено':voted?'Убрать голос':votedAuthors.has(author)?'За автора уже отдано':'Голосовать';
       const description=f['Описание'] || f['Текст'] || f['Заметка'] || '';
       const link=url(f['Ссылка на пост']);
-      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row"><button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${pendingVoteId===id?'Сохраняем…':label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
+      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row"><button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
     }).join('');
     worksNode.innerHTML=html || '<p class="contest-empty">Работ пока нет. Проверьте Airtable.</p>';
     updateCounter();
@@ -116,7 +117,7 @@
       const selected=selectedIds.has(id), locked=!selected&&(remaining()===0||selectedAuthors.has(authorMap.get(id)));
       badge.textContent=`❤️ ${countsMap.get(id)||0}`;card.classList.toggle('is-voted',selected);
       button.classList.toggle('remove',selected);button.classList.toggle('is-saving',pendingVoteId===id);
-      button.disabled=closed||!current||locked;button.textContent=pendingVoteId===id?'Сохраняем…':closed?'Голосование завершено':selected?'Убрать голос':locked?'Недоступно':'Голосовать';
+      button.disabled=closed||!current||locked;button.textContent=closed?'Голосование завершено':selected?'Убрать голос':locked?'Недоступно':'Голосовать';
     }
     updateCounter();
   }
@@ -132,7 +133,7 @@
     if(closed) { const result=await api('/api/winners'); winnerRows=result.winners||[]; winnersButton.hidden=false; }
   }
   addButton.addEventListener('click',()=>{
-    showDialog('<h2 id="contestDialogTitle">Добавить своё имя</h2><form id="contest-register"><label for="contest-new-name">Как вас зовут?</label><input id="contest-new-name" name="name" maxlength="60" minlength="2" required autocomplete="name" placeholder="Ваше имя"><button type="submit" class="vote-button">Добавить</button><p class="contest-form-message" aria-live="polite"></p></form>');
+    showDialog('<h2 id="contestDialogTitle">Добавить своё имя</h2><form id="contest-register"><label for="contest-new-name">Имя в рабочем аккаунте</label><input id="contest-new-name" name="name" maxlength="60" minlength="2" required autocomplete="off" placeholder="Как в рабочем аккаунте" aria-describedby="contest-name-hint"><p id="contest-name-hint" class="contest-name-hint">Укажите имя точно так, как оно отображается в вашем рабочем аккаунте.</p><button type="submit" class="vote-button">Добавить</button><p class="contest-form-message" aria-live="polite"></p></form>');
     $('contest-register').addEventListener('submit',async e=>{
       e.preventDefault(); const btn=e.currentTarget.querySelector('button'); const name=e.currentTarget.elements.name.value.trim();btn.disabled=true;
       try {await post('/api/register',{name});await refresh(); select.value=name;select.dispatchEvent(new Event('change'));closeDialog();notify('Имя добавлено! У вас 5 голосов.');}
@@ -170,6 +171,7 @@
     const removing=votes.some(v=>normalize(v.fields?.['Voter Name'])===normalize(chosenName())&&(v.fields?.['Contest Work']||[]).includes(workId));
     const before=votes;
     busy=true;pendingVoteId=workId;
+    const revision=++voteRevision;
     if(removing){
       votes=votes.filter(v=>!(normalize(v.fields?.['Voter Name'])===normalize(chosenName())&&(v.fields?.['Contest Work']||[]).includes(workId)));
     }else{
@@ -178,8 +180,11 @@
     updateVoteWidgets();pulse(btn);
     try {
       await post('/api/vote',{voterName:chosenName(),contestWork:workId,action:removing?'delete':'add'});
-      const result=await api('/api/votes');votes=uniqueVotes(result.records||[]);
       notify(removing?'Голос отменён':'Голос учтён!');
+      // Не задерживаем кнопку вторым запросом в Airtable. Сверяем данные фоном.
+      api('/api/votes').then(result=>{
+        if(revision===voteRevision && !busy){votes=uniqueVotes(result.records||[]);updateVoteWidgets();}
+      }).catch(err=>console.warn('Фоновая синхронизация голосов:',err));
     }catch(err){
       votes=before;notify(err.message);
       try{votes=uniqueVotes((await api('/api/votes')).records||[]);}catch{}
