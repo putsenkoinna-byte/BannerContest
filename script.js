@@ -7,6 +7,7 @@
   if (!select || !worksNode) return;
 
   let works = [], votes = [], closed = false, busy = false, winnerRows = [];
+  let pendingVoteId = null;
   let lastRefreshId = 0;
   const normalize = s => String(s || '').trim().replace(/^@+/, '').toLocaleLowerCase('ru');
   const escape = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -21,7 +22,7 @@
 
   const tools = document.createElement('div'); tools.className = 'contest-tools';
   const addButton = document.createElement('button'); addButton.type='button'; addButton.className='small-tool-btn'; addButton.textContent='+ Добавить своё имя';
-  const finishButton = document.createElement('button'); finishButton.type='button'; finishButton.className='small-tool-btn admin-button'; finishButton.textContent='Завершить голосование'; finishButton.hidden=true;
+  const finishButton = document.createElement('button'); finishButton.type='button'; finishButton.className='small-tool-btn admin-button'; finishButton.textContent='Завершить голосование'; finishButton.hidden=false;
   const winnersButton = document.createElement('button'); winnersButton.type='button'; winnersButton.className='small-tool-btn'; winnersButton.textContent='🏆 Победители'; winnersButton.hidden=true;
   tools.append(addButton, finishButton, winnersButton); select.insertAdjacentElement('afterend',tools);
   const overlay = document.createElement('div'); overlay.className='contest-dialog-overlay'; overlay.hidden=true; overlay.innerHTML='<section class="contest-dialog" role="dialog" aria-modal="true" aria-labelledby="contestDialogTitle"><button type="button" class="contest-dialog-close" aria-label="Закрыть">×</button><div class="contest-dialog-body"></div></section>';
@@ -51,7 +52,7 @@
     select.replaceChildren(new Option('Выберите своё имя',''));
     for (const n of names) select.add(new Option(n,n));
     if (names.includes(selected)) select.value=selected;
-    finishButton.hidden=normalize(chosenName())!=='арина' || closed;
+    finishButton.hidden=closed;
     addButton.hidden=closed;
     winnersButton.hidden=!closed;
   }
@@ -90,18 +91,39 @@
     const votedAuthors=new Set([...votedIds].map(id=>authorMap.get(id)).filter(Boolean));
     const html=works.filter(w=>w.fields?.Username && w.fields?.['Конкурсные работы']?.length).map(w=>{
       const f=w.fields, id=w.id, author=normalize(f.Username), voted=votedIds.has(id);
-      const disabled=closed || !voter || busy || (!voted && (remaining()<=0 || votedAuthors.has(author)));
+      const disabled=closed || !voter || (!voted && (remaining()<=0 || votedAuthors.has(author)));
       const label=closed?'Голосование завершено':voted?'Убрать голос':votedAuthors.has(author)?'За автора уже отдано':'Голосовать';
       const description=f['Описание'] || f['Текст'] || f['Заметка'] || '';
       const link=url(f['Ссылка на пост']);
-      return `<article class="card" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row"><button type="button" class="vote-button ${voted?'remove':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
+      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row"><button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${pendingVoteId===id?'Сохраняем…':label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
     }).join('');
     worksNode.innerHTML=html || '<p class="contest-empty">Работ пока нет. Проверьте Airtable.</p>';
+    updateCounter();
+    observeCards();
+  }
+  const cardObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(entries=>{
+    for(const entry of entries){if(entry.isIntersecting){entry.target.classList.add('is-visible');cardObserver.unobserve(entry.target);}}
+  },{threshold:0.04,rootMargin:'0px 0px 70px 0px'}) : null;
+  function observeCards(){for(const card of worksNode.querySelectorAll('.card')){if(cardObserver)cardObserver.observe(card);else card.classList.add('is-visible');}}
+  function pulse(button){button.classList.remove('vote-pop');void button.offsetWidth;button.classList.add('vote-pop');}
+  function updateVoteWidgets(){
+    const countsMap=counts(), current=normalize(chosenName()), authorMap=authorById();
+    const mine=votes.filter(v=>normalize(v.fields?.['Voter Name'])===current);
+    const selectedIds=new Set(mine.flatMap(v=>Array.isArray(v.fields?.['Contest Work'])?v.fields['Contest Work']:[v.fields?.['Contest Work']]));
+    const selectedAuthors=new Set([...selectedIds].map(id=>authorMap.get(id)));
+    for(const card of worksNode.querySelectorAll('.card')){
+      const id=card.dataset.workId, button=card.querySelector('[data-vote]'), badge=card.querySelector('.votes-badge');
+      const selected=selectedIds.has(id), locked=!selected&&(remaining()===0||selectedAuthors.has(authorMap.get(id)));
+      badge.textContent=`❤️ ${countsMap.get(id)||0}`;card.classList.toggle('is-voted',selected);
+      button.classList.toggle('remove',selected);button.classList.toggle('is-saving',pendingVoteId===id);
+      button.disabled=closed||!current||locked;button.textContent=pendingVoteId===id?'Сохраняем…':closed?'Голосование завершено':selected?'Убрать голос':locked?'Недоступно':'Голосовать';
+    }
     updateCounter();
   }
   function renderWinners(list) {
     winnerRows=list;
-    showDialog(`<div class="winners-heading">🏆</div><h2 id="contestDialogTitle">Наши победители!</h2><p>Топ-5 авторов по количеству голосов</p><div class="contest-winners">${list.length?list.map(w=>`<div class="winner-item"><span class="winner-rank">${w.rank} место</span><button type="button" class="copy-user-btn" data-copy="@${escape(w.username)}">@${escape(w.username)}</button><span class="winner-votes">❤️ ${w.count}</span>${url(w.link)?`<button type="button" class="copy-post-btn" data-copy="${escape(url(w.link))}">Копировать ссылку</button><a href="${escape(url(w.link))}" target="_blank" rel="noopener noreferrer" class="winner-open" aria-label="Открыть пост">↗</a>`:''}</div>`).join(''):'<p>Пока никто не получил голосов.</p>'}</div><p class="winner-help">Ник и ссылку можно копировать по отдельности.</p>`);
+    const medals=['🥇','🥈','🥉','✦','✦'];
+    showDialog(`<div class="winners-hero"><div class="winners-kicker">#WINternational2026 · ФИНАЛ</div><div class="winners-trophy">🏆</div><h2 id="contestDialogTitle">Наши победители</h2><p>Пять авторов, которых выбрали вы</p></div><div class="contest-winners">${list.length?list.map((w,i)=>`<article class="winner-card place-${i+1}"><div class="winner-place"><span>${medals[i]||'✦'}</span><small>${w.rank} место</small></div><div class="winner-main"><div class="winner-name">@${escape(w.username)}</div><div class="winner-votes">♥ ${w.count} ${w.count===1?'голос':'голосов'}</div><div class="winner-actions"><button type="button" data-copy="@${escape(w.username)}" class="winner-action">Скопировать ник</button>${url(w.link)?`<button type="button" data-copy="${escape(url(w.link))}" class="winner-action">Копировать ссылку</button><a href="${escape(url(w.link))}" target="_blank" rel="noopener noreferrer" class="winner-action winner-view">Открыть ↗</a>`:''}</div></div></article>`).join(''):'<p>Пока никто не получил голосов.</p>'}</div>`);
   }
   async function refresh() {
     const [state,w,v]=await Promise.all([api('/api/state'),api('/api/works'),api('/api/votes')]);
@@ -118,7 +140,7 @@
     });
   });
   finishButton.addEventListener('click',()=>{
-    showDialog('<h2 id="contestDialogTitle">Завершить голосование?</h2><p>После завершения новые голоса и отмены будут заблокированы. Результаты увидят все.</p><form id="contest-finish"><label for="contest-pin">PIN администратора</label><input id="contest-pin" name="pin" type="password" autocomplete="off" required placeholder="Введите PIN"><button type="submit" class="vote-button">Подтвердить завершение</button><p class="contest-form-message" aria-live="polite"></p></form>');
+    showDialog('<h2 id="contestDialogTitle">Только для администратора — Арины</h2><p>Для завершения нужен PIN администратора. После завершения новые голоса и отмены будут заблокированы. Результаты увидят все.</p><form id="contest-finish"><label for="contest-pin">PIN администратора</label><input id="contest-pin" name="pin" type="password" autocomplete="off" required placeholder="Введите PIN"><button type="submit" class="vote-button">Подтвердить завершение</button><p class="contest-form-message" aria-live="polite"></p></form>');
     $('contest-finish').addEventListener('submit',async e=>{
       e.preventDefault();const btn=e.currentTarget.querySelector('button'); btn.disabled=true;
       try {const result=await post('/api/finish',{pin:e.currentTarget.elements.pin.value});await refresh();renderWinners(result.winners||[]);}
@@ -126,7 +148,7 @@
     });
   });
   winnersButton.addEventListener('click',async()=>{try{renderWinners((await api('/api/winners')).winners||[]);}catch(e){notify(e.message);}});
-  select.addEventListener('change',()=>{localStorage.setItem('contest-voter-name',chosenName());finishButton.hidden=normalize(chosenName())!=='арина'||closed;render();});
+  select.addEventListener('change',()=>{localStorage.setItem('contest-voter-name',chosenName());finishButton.hidden=closed;render();});
   worksNode.addEventListener('click',async e=>{
     const soundButton=e.target.closest('.video-sound-button');
     if(soundButton){
@@ -143,14 +165,25 @@
     const arrow=e.target.closest('.slider-next,.slider-prev');
     if(arrow){const slider=arrow.closest('.slider'),box=slider.querySelector('.slider-items');const direction=arrow.classList.contains('slider-next')?1:-1;box.scrollBy({left:direction*box.clientWidth,behavior:'smooth'});return;}
     const btn=e.target.closest('[data-vote]');if(!btn||busy||closed)return;
-    const workId=btn.dataset.vote;busy=true;render();
+    const workId=btn.dataset.vote;
+    if(btn.disabled)return;
+    const removing=votes.some(v=>normalize(v.fields?.['Voter Name'])===normalize(chosenName())&&(v.fields?.['Contest Work']||[]).includes(workId));
+    const before=votes;
+    busy=true;pendingVoteId=workId;
+    if(removing){
+      votes=votes.filter(v=>!(normalize(v.fields?.['Voter Name'])===normalize(chosenName())&&(v.fields?.['Contest Work']||[]).includes(workId)));
+    }else{
+      votes=[...votes,{id:'optimistic-'+Date.now(),fields:{'Voter Name':chosenName(),'Contest Work':[workId]}}];
+    }
+    updateVoteWidgets();pulse(btn);
     try {
-      const removing=votes.some(v=>normalize(v.fields?.['Voter Name'])===normalize(chosenName())&&(v.fields?.['Contest Work']||[]).includes(workId));
       await post('/api/vote',{voterName:chosenName(),contestWork:workId,action:removing?'delete':'add'});
       const result=await api('/api/votes');votes=uniqueVotes(result.records||[]);
       notify(removing?'Голос отменён':'Голос учтён!');
-    }catch(err){notify(err.message);try{votes=uniqueVotes((await api('/api/votes')).records||[]);}catch{}}
-    finally{busy=false;render();}
+    }catch(err){
+      votes=before;notify(err.message);
+      try{votes=uniqueVotes((await api('/api/votes')).records||[]);}catch{}
+    }finally{busy=false;pendingVoteId=null;updateVoteWidgets();}
   });
   overlay.addEventListener('click',async e=>{
     const b=e.target.closest('[data-copy]');if(!b)return;
