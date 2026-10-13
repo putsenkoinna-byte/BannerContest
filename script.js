@@ -14,6 +14,7 @@
   let favorites = new Set();
   let choiceIds = new Set();
   let choosing = false;
+  let previewWorkId = null;
   const favoritesButton = document.createElement('button');
   favoritesButton.type = 'button';
   favoritesButton.className = 'small-tool-btn favorites-open';
@@ -72,7 +73,7 @@
   const overlay = document.createElement('div'); overlay.className='contest-dialog-overlay'; overlay.hidden=true; overlay.innerHTML='<section class="contest-dialog" role="dialog" aria-modal="true" aria-labelledby="contestDialogTitle"><button type="button" class="contest-dialog-close" aria-label="Закрыть">×</button><div class="contest-dialog-body"></div></section>';
   document.body.append(overlay);
   const dialogBody = overlay.querySelector('.contest-dialog-body');
-  const closeDialog = () => {overlay.hidden=true; dialogBody.replaceChildren();};
+  const closeDialog = () => {previewWorkId=null; overlay.hidden=true; dialogBody.replaceChildren();};
   overlay.addEventListener('click', e => {if(e.target===overlay || e.target.closest('.contest-dialog-close')) closeDialog();});
   document.addEventListener('keydown', e => {if(e.key==='Escape' && !overlay.hidden) closeDialog();});
   function showDialog(html) {dialogBody.innerHTML=html; overlay.hidden=false; overlay.querySelector('input,button')?.focus();}
@@ -192,7 +193,7 @@
   function renderWinners(list) {
     winnerRows=list;
     const medals=['🥇','🥈','🥉','✦','✦'];
-    showDialog(`<div class="winners-hero"><div class="winners-kicker">#CosplayBattle · ФИНАЛ</div><div class="winners-trophy">🏆</div><h2 id="contestDialogTitle">Наши победители</h2><p>Пять авторов, которых мы выбрали</p></div><div class="contest-winners">${list.length?list.map((w,i)=>`<article class="winner-card place-${i+1}"><div class="winner-place"><span>${medals[i]||'✦'}</span><small>${w.rank} место</small></div><div class="winner-main"><div class="winner-name">@${escape(w.username)}</div><div class="winner-votes">♥ ${w.count} ${w.count===1?'голос':'голосов'}</div><div class="winner-actions"><button type="button" data-copy="@${escape(w.username)}" class="winner-action">Скопировать ник</button>${url(w.link)?`<button type="button" data-copy="${escape(url(w.link))}" class="winner-action">Копировать ссылку</button><a href="${escape(url(w.link))}" target="_blank" rel="noopener noreferrer" class="winner-action winner-view">Открыть ↗</a>`:''}</div></div></article>`).join(''):'<p>Пока никто не получил голосов.</p>'}</div>`);
+    showDialog(`<div class="winners-hero"><div class="winners-kicker">#CosplayBattle · ФИНАЛ</div><div class="winners-trophy">🏆</div><h2 id="contestDialogTitle">Наши победители</h2><p>Пять авторов, которых выбрали вы</p></div><div class="contest-winners">${list.length?list.map((w,i)=>`<article class="winner-card place-${i+1}"><div class="winner-place"><span>${medals[i]||'✦'}</span><small>${w.rank} место</small></div><div class="winner-main"><div class="winner-name">@${escape(w.username)}</div><div class="winner-votes">♥ ${w.count} ${w.count===1?'голос':'голосов'}</div><div class="winner-actions"><button type="button" data-copy="@${escape(w.username)}" class="winner-action">Скопировать ник</button>${url(w.link)?`<button type="button" data-copy="${escape(url(w.link))}" class="winner-action">Копировать ссылку</button><a href="${escape(url(w.link))}" target="_blank" rel="noopener noreferrer" class="winner-action winner-view">Открыть ↗</a>`:''}</div></div></article>`).join(''):'<p>Пока никто не получил голосов.</p>'}</div>`);
   }
   async function refresh() {
     const [state,w,v]=await Promise.all([api('/api/state'),api('/api/works'),api('/api/votes')]);
@@ -224,10 +225,12 @@
       return;
     }
     choosing = true;
+    previewWorkId = null;
     choiceIds.clear();
     renderFavorites();
   }
   function renderFavorites() {
+    previewWorkId = null;
     for (const id of choiceIds) if (isBlocked(works.find(w=>w.id===id))) choiceIds.delete(id);
     const authorMap = authorById();
     const mine = votes.filter(v => normalize(v.fields?.['Voter Name']) === normalize(chosenName()));
@@ -245,8 +248,8 @@
       const unavailable = closed || blocked || already;
       const thumb = (w.fields['Конкурсные работы'] || []).find(f => (f.type || '').startsWith('image/'));
       return `<div class="favorite-row ${selected ? 'selected' : ''}">
-        ${thumb && url(thumb.url) ? `<img loading="lazy" src="${escape(url(thumb.url))}" alt="">` : '<div class="favorite-placeholder">★</div>'}
-        <div class="favorite-row-main"><strong>@${escape(String(w.fields.Username).replace(/^@+/, ''))}</strong><small>${already ? 'Вы уже проголосовали за автора' : blocked ? 'Голосование недоступно' : 'В избранном'}</small></div>
+        <button type="button" class="favorite-open-preview" data-preview="${escape(w.id)}" aria-label="Посмотреть работу @${escape(String(w.fields.Username).replace(/^@+/, ''))}">${thumb && url(thumb.url) ? `<img loading="lazy" src="${escape(url(thumb.url))}" alt="">` : '<span class="favorite-placeholder">★</span>'}</button>
+        <div class="favorite-row-main"><button class="favorite-name-preview" type="button" data-preview="${escape(w.id)}"><strong>@${escape(String(w.fields.Username).replace(/^@+/, ''))}</strong><small>Нажмите, чтобы посмотреть крупно</small></button><small>${already ? 'Вы уже проголосовали за автора' : blocked ? 'Голосование недоступно' : 'В избранном'}</small></div>
         <button type="button" class="favorite-remove" data-unmark="${escape(w.id)}" title="Убрать из отмеченных" aria-label="Убрать из отмеченных">×</button>
         <button type="button" class="favorite-pick ${selected ? 'active' : ''}" data-pick="${escape(w.id)}" ${unavailable ? 'disabled' : ''}>${already ? 'Учтено' : selected ? '✓ Выбрано' : 'Выбрать'}</button>
       </div>`;
@@ -257,13 +260,73 @@
       <div class="favorites-footer"><span>Выбрано сейчас: <b>${choiceIds.size}</b> из ${max}</span><button class="vote-button" type="button" id="favoriteConfirm" ${!choiceIds.size || busy || closed ? 'disabled' : ''}>Подтвердить ${choiceIds.size} голосов</button></div>
       <p class="contest-form-message" id="favoritesMessage" aria-live="polite"></p></div>`);
   }
+  function markedWorks() {
+    return works.filter(w => favorites.has(w.id) && w.fields?.Username && !isBlocked(w));
+  }
+  function previewFavorites(id) {
+    const marked = markedWorks();
+    const index = marked.findIndex(w => w.id === id);
+    if (index < 0) {renderFavorites();return;}
+    previewWorkId=id;
+    const w=marked[index], f=w.fields;
+    const author=normalize(f.Username);
+    const already=votes.some(v=>normalize(v.fields?.['Voter Name'])===normalize(chosenName()) &&
+      (Array.isArray(v.fields?.['Contest Work'])?v.fields['Contest Work']:[v.fields?.['Contest Work']]).some(workId=>normalize(works.find(item=>item.id===workId)?.fields?.Username)===author));
+    const selected=choiceIds.has(id);
+    const blocked=closed || isBlocked(w) || already || remaining()===0;
+    const description=f['Описание'] || f['Текст'] || f['Заметка'] || '';
+    const link=url(f['Ссылка на пост']);
+    showDialog(`<div class="favorite-preview"><div class="favorite-preview-top"><button type="button" class="favorite-back" data-preview-back>← К списку отмеченных</button><span>${index+1} из ${marked.length}</span></div>
+      <h2 id="contestDialogTitle">@${escape(String(f.Username).replace(/^@+/,''))}</h2>
+      <div class="favorite-preview-media">${media(f['Конкурсные работы']) || '<p>Медиафайл недоступен</p>'}</div>
+      ${description?`<p class="favorite-preview-description">${escape(description)}</p>`:''}
+      ${link?`<a class="favorite-preview-link" href="${escape(link)}" target="_blank" rel="noopener noreferrer">Открыть оригинальный пост ↗</a>`:''}
+      <div class="favorite-preview-actions">
+        <button type="button" class="favorite-pick ${selected?'active':''}" data-pick="${escape(id)}" ${blocked?'disabled':''}>${already?'Голос уже учтён':selected?'✓ Выбрано для голосования':'Выбрать для голосования'}</button>
+        <button type="button" class="vote-button" data-preview-vote="${escape(id)}" ${blocked || busy?'disabled':''}>${already?'За автора уже проголосовали':'❤️ Отдать голос сейчас'}</button>
+      </div>
+      <div class="favorite-preview-navigation"><button type="button" data-preview="${escape(marked[(index-1+marked.length)%marked.length].id)}" ${marked.length<2?'disabled':''}>← Предыдущая</button><button type="button" data-preview="${escape(marked[(index+1)%marked.length].id)}" ${marked.length<2?'disabled':''}>Следующая →</button></div>
+      <p id="previewMessage" class="contest-form-message" aria-live="polite"></p></div>`);
+    const video=dialogBody.querySelector('video');
+    if(video) {video.autoplay=false;video.pause();}
+  }
+  overlay.addEventListener('click', async e=>{
+    const back=e.target.closest('[data-preview-back]');
+    if(back){renderFavorites();return;}
+    const next=e.target.closest('[data-preview]');
+    if(next){previewFavorites(next.dataset.preview);return;}
+    const sound=e.target.closest('.video-sound-button');
+    if(sound){const video=sound.closest('.video-slide')?.querySelector('video');if(video){video.muted=!video.muted;sound.textContent=video.muted?'🔊 Включить звук':'🔇 Выключить звук';video.play().catch(()=>{});}return;}
+    const arrow=e.target.closest('.slider-next,.slider-prev');
+    if(arrow){const box=arrow.closest('.slider')?.querySelector('.slider-items');if(box)box.scrollBy({left:(arrow.classList.contains('slider-next')?1:-1)*box.clientWidth,behavior:'smooth'});return;}
+    const voteButton=e.target.closest('[data-preview-vote]');
+    if(!voteButton || voteButton.disabled || busy || closed)return;
+    const id=voteButton.dataset.previewVote;
+    if(!confirm('Отдать один голос за эту работу?'))return;
+    busy=true;voteButton.disabled=true;voteButton.textContent='Сохраняем голос...';
+    try{
+      await post('/api/vote',{voterName:chosenName(),contestWork:id,action:'add'});
+      votes=uniqueVotes((await api('/api/votes')).records||[]);
+      clearCompletedFavorites();
+      render();
+      if(remaining()===0){closeDialog();notify('Все 5 голосов учтены. Отметки очищены.');}
+      else{choiceIds.delete(id); if(markedWorks().some(w=>w.id===id))previewFavorites(id);else renderFavorites(); notify('Голос учтён!');}
+    }catch(err){notify(err.message); if(previewWorkId)previewFavorites(previewWorkId);}
+    finally{busy=false;}
+  });
+  document.addEventListener('keydown',e=>{
+    if(overlay.hidden || !previewWorkId || !['ArrowLeft','ArrowRight'].includes(e.key))return;
+    if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+    const marked=markedWorks(), i=marked.findIndex(w=>w.id===previewWorkId);
+    if(i>=0 && marked.length>1){e.preventDefault();previewFavorites(marked[(i+(e.key==='ArrowRight'?1:-1)+marked.length)%marked.length].id);}
+  });
   favoritesButton.addEventListener('click', openFavorites);
   overlay.addEventListener('click', async e => {
     const rm = e.target.closest('[data-unmark]');
     if (rm) {
       favorites.delete(rm.dataset.unmark);
       choiceIds.delete(rm.dataset.unmark);
-      saveFavorites(); renderFavorites(); return;
+      saveFavorites(); if(previewWorkId && markedWorks().some(w=>w.id===previewWorkId))previewFavorites(previewWorkId); else renderFavorites(); return;
     }
     const pick = e.target.closest('[data-pick]');
     if (pick && !pick.disabled) {
@@ -277,7 +340,7 @@
         }
         choiceIds.add(id);
       }
-      renderFavorites(); return;
+      if(previewWorkId)previewFavorites(previewWorkId); else renderFavorites(); return;
     }
     if (e.target.id !== 'favoriteConfirm' || busy || closed) return;
     const btn = e.target;
