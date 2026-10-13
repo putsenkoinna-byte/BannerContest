@@ -48,27 +48,34 @@ export async function getClosedState() {
     const value = String(r.fields?.Key || '');
     return value === 'contest' || value.startsWith('contest|');
   });
-  // Prefer the most recent contest state if there are duplicate settings records.
-  const ordered = [...states].sort((a,b) => String(b.createdTime||'').localeCompare(String(a.createdTime||'')));
-  const active = ordered.filter(r => Boolean(r.fields?.Closed));
-  if (!active.length) return {closed:false,record:ordered[0]};
+  const ordered = [...states].sort((a,b) =>
+    String(b.createdTime || '').localeCompare(String(a.createdTime || '')));
+  const active = ordered.filter(r => r.fields?.Closed === true);
+  if (!active.length) return { closed: false, record: ordered[0] };
 
-  const currentVotes = await listAll(VOTES_TABLE_ID);
-  const currentIds = new Set(currentVotes.map(v=>v.id));
-  // Each closed record must be a valid snapshot with every original vote still present.
-  const invalid = active.some(r=>{
-    const k=String(r.fields?.Key||'');
-    if (!k.startsWith('contest|')) return true;
-    const saved=k.slice('contest|'.length).split(',').filter(Boolean);
-    return !saved.length || currentIds.size===0 || saved.some(id=>!currentIds.has(id));
+  const votes = await listAll(VOTES_TABLE_ID);
+  const existingIds = new Set(votes.map(v => v.id));
+  const snapshotInvalid = active.some(r => {
+    const stored = String(r.fields?.Key || '');
+    if (!stored.startsWith('contest|')) return true;
+    const originallySaved = stored.slice('contest|'.length).split(',').filter(Boolean);
+    // Even deleting the final vote must reopen the contest.
+    if (!originallySaved.length || !existingIds.size) return true;
+    return originallySaved.some(id => !existingIds.has(id));
   });
-  if (invalid) {
-    await Promise.all(active.map(r => airtable(`${SETTINGS_TABLE_ID}/${r.id}`, {
-      method:'PATCH', body:JSON.stringify({fields:{Key:'contest',Closed:false}})
-    })));
-    return {closed:false,record:ordered[0]};
+
+  if (snapshotInvalid) {
+    // Mark every obsolete active status as open; do not leave a stale Closed
+    // checkbox on a duplicate ContestSettings row.
+    await Promise.all(active.map(record =>
+      airtable(`${SETTINGS_TABLE_ID}/${record.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ fields: { Key: 'contest', Closed: false } })
+      })
+    ));
+    return { closed: false, record: ordered[0] };
   }
-  return {closed:true,record:active[0]};
+  return { closed: true, record: active[0] };
 }
 export async function getVoterNames() {
   const rows = await listAll(VOTERS_TABLE_ID);
