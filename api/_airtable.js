@@ -64,7 +64,9 @@ export async function getClosedState() {
   }
 
   const current = new Set((await listAll(VOTES_TABLE_ID)).map(v => v.id));
-  const deleted = savedIds.some(id => !current.has(id));
+  // A closed contest with zero current votes must always reopen.
+  // This also fixes old closed snapshots whose saved ID list was empty.
+  const deleted = current.size === 0 || savedIds.some(id => !current.has(id));
   if (deleted) {
     await airtable(`${SETTINGS_TABLE_ID}/${row.id}`, {
       method: 'PATCH', body: JSON.stringify({ fields: { Key: 'contest', Closed: false } })
