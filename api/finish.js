@@ -1,5 +1,8 @@
+import { requireAccess, requireSameOrigin } from './_access.js';
 import { airtable, listAll, getClosedState, getWinners, SETTINGS_TABLE_ID, WORKS_TABLE_ID, VOTES_TABLE_ID, getSnapshotKey, apiError } from './_airtable.js';
 export default async function handler(req,res) {
+  if (!requireAccess(req,res)) return;
+  if (!requireSameOrigin(req,res)) return;
   if (req.method !== 'POST') return res.status(405).json({error:'Метод не поддерживается'});
   if (!process.env.ADMIN_PIN) return res.status(503).json({error:'В Vercel не настроен ADMIN_PIN'});
   if (String(req.body?.pin || '') !== process.env.ADMIN_PIN) return res.status(403).json({error:'Неверный PIN-код'});
