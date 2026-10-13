@@ -1,5 +1,8 @@
+import { requireAccess, requireSameOrigin } from './_access.js';
 import { airtable, listAll, WORKS_TABLE_ID, VOTES_TABLE_ID, getClosedState, getVoterNames, key, linkedIds, apiError, MAX_VOTES, canonicalVotes } from './_airtable.js';
 export default async function handler(req,res) {
+  if (!requireAccess(req,res)) return;
+  if (!requireSameOrigin(req,res)) return;
   if (req.method !== 'POST') return res.status(405).json({error:'Метод не поддерживается'});
   const {action,contestWork} = req.body || {};
   const voterName = String(req.body?.voterName || '').trim();
