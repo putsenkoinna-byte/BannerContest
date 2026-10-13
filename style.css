@@ -143,3 +143,60 @@ select:focus-visible, button:focus-visible, a:focus-visible {
 .video-sound-button {position:absolute; z-index:5; top:12px; right:12px; padding:9px 12px; border:1px solid rgba(255,255,255,.25); border-radius:10px; background:rgba(15,16,22,.88); color:#fff; font-size:13px; font-weight:600; cursor:pointer; backdrop-filter:blur(6px);}
 .video-sound-button:hover {background:#373b54;}
 .video-sound-button:focus-visible {outline:2px solid #a5b4fc; outline-offset:2px;}
+
+/* V4 — layout, motion, winners */
+body {background:radial-gradient(ellipse 90% 600px at 50% -270px,rgba(99,102,241,.19),transparent 80%),var(--bg);}
+.container{width:min(100%,1460px);padding:30px 24px 100px;}
+#works{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;}
+.card{border:1px solid #30344b;border-radius:19px;transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;}
+.card:hover{transform:translateY(-4px);border-color:#6366f188;box-shadow:0 16px 42px rgba(0,0,0,.24);}
+.card.is-voted{border-color:#8585ff;box-shadow:0 0 0 1px #6366f155,0 12px 30px #0003;}
+.card-content{min-height:128px;padding:18px;}
+.card .media-area img,.card .media-area video{height:clamp(330px,33vw,490px);}
+.card-header{margin-bottom:10px;}.button-row{margin-top:16px;}
+.vote-button{position:relative;overflow:hidden;background:linear-gradient(120deg,#6868fa,#5853d7);box-shadow:0 5px 18px #6366f125;}
+.vote-button:disabled{opacity:.68;cursor:not-allowed;}
+.vote-button.is-saving{background:linear-gradient(120deg,#6664dc,#7772ea);color:#fff;opacity:1;}
+.vote-button.is-saving::after{content:'';display:inline-block;width:12px;height:12px;margin-left:10px;border:2px solid #fff5;border-top-color:#fff;border-radius:50%;vertical-align:-2px;animation:spin .7s linear infinite;}
+.vote-button.remove{background:linear-gradient(120deg,#df557c,#c43c69);}
+.vote-pop{animation:votePop .42s cubic-bezier(.2,1.8,.4,1);}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes votePop{0%{transform:scale(1)}40%{transform:scale(.94)}75%{transform:scale(1.045)}100%{transform:scale(1)}}
+.card{opacity:0;transform:translateY(18px);}
+.card.is-visible{opacity:1;transform:translateY(0);transition:opacity .5s ease,transform .5s ease,border-color .25s ease,box-shadow .25s ease;}
+.card.is-visible:hover{transform:translateY(-4px);}
+.contest-tools{margin:0 0 24px;}
+.small-tool-btn{border-radius:12px;background:#23263b;border-color:#363b59;}
+.admin-button{background:transparent;border-color:#7975bd;color:#d8d4ff;}
+.contest-dialog{width:min(100%,660px);padding:26px;border-radius:24px;border-color:#46445e;}
+.winners-hero{text-align:center;padding:10px 0 24px;border-bottom:1px solid #ffffff13;}
+.winners-kicker{color:#a5b4fc;font-size:11px;letter-spacing:.18em;font-weight:800;}
+.winners-trophy{font-size:52px;filter:drop-shadow(0 6px 24px #e5b85a55);margin:12px auto 6px;}
+.winners-hero h2{font-size:clamp(27px,5vw,38px);letter-spacing:-.04em;margin:0;}
+.winners-hero p{font-size:14px;margin:8px 0 0;}
+.contest-winners{gap:12px;margin:20px 0 0;}
+.winner-card{display:flex;align-items:center;gap:15px;min-width:0;padding:16px;border:1px solid #353950;border-radius:16px;background:linear-gradient(115deg,#242639,#1c1e2c);}
+.winner-card.place-1{border-color:#d2a85366;background:linear-gradient(120deg,#513e28,#262432 62%);padding:22px 18px;}
+.winner-card.place-2{border-color:#a9b6d344;}.winner-card.place-3{border-color:#d9987544;}
+.winner-place{width:76px;flex:none;display:flex;flex-direction:column;align-items:center;gap:3px;color:#ced3e8;}
+.winner-place span{font-size:28px;}.winner-place small{font-size:12px;font-weight:700;}
+.winner-main{min-width:0;flex:1;}.winner-name{font-size:16px;font-weight:800;color:#fff;overflow-wrap:anywhere;}
+.winner-votes{font-size:12px;color:#d1d5e8;margin:5px 0 11px;}
+.winner-actions{display:flex;flex-wrap:wrap;gap:7px;}
+.winner-action{display:inline-flex;align-items:center;justify-content:center;min-height:34px;padding:8px 11px;border:1px solid #4d506b;border-radius:9px;background:#34374d;color:#e9eaff;cursor:pointer;text-decoration:none;font-size:12px;font-weight:600;}
+.winner-action:hover{background:#505478;}.winner-view{border-color:#6866b3;background:#514f92;}
+@media(min-width:1200px){.container{width:min(100%,1380px);}}
+@media(max-width:950px){#works{grid-template-columns:repeat(2,minmax(0,1fr));}.container{padding:22px 18px 90px;}}
+@media(max-width:600px){
+  body{min-width:0;}.container{padding:14px 12px 90px;}
+  #works{grid-template-columns:minmax(0,1fr);gap:14px;}
+  .card .media-area img,.card .media-area video{height:auto;max-height:75dvh;min-height:220px;object-fit:contain;}
+  .contest-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 16px;}
+  .small-tool-btn{min-width:0;padding:9px 8px;font-size:12px;}
+  .contest-dialog-overlay{align-items:center;padding:10px;}
+  .contest-dialog{padding:24px 14px 16px;width:100%;max-height:92dvh;border-radius:18px;}
+  .winner-card{gap:9px;padding:11px 9px;}.winner-card.place-1{padding:14px 10px;}
+  .winner-place{width:48px;}.winner-place span{font-size:25px;}.winner-place small{font-size:10px;}
+  .winner-name{font-size:14px;}.winner-action{font-size:11px;padding:7px;min-height:34px;}
+}
+@media(prefers-reduced-motion:reduce){.card,.card.is-visible,.card:hover,.vote-pop,.vote-button.is-saving::after{animation:none!important;transition:none!important;transform:none!important;opacity:1!important;}}
