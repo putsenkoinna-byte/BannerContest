@@ -50,8 +50,14 @@
   const normalize = s => String(s || '').trim().replace(/^@+/, '').toLocaleLowerCase('ru');
   const escape = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const url = s => { try { const u = new URL(String(s)); return ['https:','http:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } };
-  async function api(path, options) {
-    const res = await fetch(path, options);
+  // Временный доступ в пределах текущей вкладки.
+  const ACCESS_KEY = 'cosplaybattle-tab-access-v11';
+  let accessToken = '';
+  try { accessToken = sessionStorage.getItem(ACCESS_KEY) || ''; } catch {}
+  async function api(path, options = {}) {
+    const headers = { ...(options.headers || {}) };
+    if (accessToken) headers['X-Contest-Access'] = accessToken;
+    const res = await fetch(path, { ...options, headers });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
     return data;
@@ -392,7 +398,10 @@
       button.disabled = true;
       accessError.textContent = '';
       try {
-        await post('/api/access', { pin: field.value });
+        const result = await post('/api/access', { pin: field.value });
+        if (!result.accessToken) throw new Error('Сервер не вернул ключ доступа');
+        accessToken = result.accessToken;
+        try { sessionStorage.setItem(ACCESS_KEY, accessToken); } catch {}
         field.value = '';
         grantAccess();
       } catch (err) {
@@ -404,7 +413,11 @@
   }
   api('/api/access').then(data => {
     if (data.authenticated) grantAccess();
-    else $('accessPin')?.focus();
+    else {
+      accessToken = '';
+      try { sessionStorage.removeItem(ACCESS_KEY); } catch {}
+      $('accessPin')?.focus();
+    }
   }).catch(err => {
     accessError.textContent = 'Не удалось проверить доступ. Обновите страницу.';
     console.error(err);
