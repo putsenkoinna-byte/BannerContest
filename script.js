@@ -133,7 +133,9 @@
     if(closed) { const result=await api('/api/winners'); winnerRows=result.winners||[]; winnersButton.hidden=false; }
   }
   addButton.addEventListener('click',()=>{
-    showDialog('<h2 id="contestDialogTitle">Добавить своё имя</h2><form id="contest-register"><label for="contest-new-name">Имя в рабочем аккаунте</label><input id="contest-new-name" name="name" maxlength="60" minlength="2" required autocomplete="off" placeholder="Как в рабочем аккаунте" aria-describedby="contest-name-hint"><p id="contest-name-hint" class="contest-name-hint">Укажите имя точно так, как оно отображается в вашем рабочем аккаунте.</p><button type="submit" class="vote-button">Добавить</button><p class="contest-form-message" aria-live="polite"></p></form>');
+    
+showDialog('<h2 id="contestDialogTitle">Укажите имя</h2><form id="contest-register"><input id="contest-new-name" name="name" maxlength="60" minlength="2" required autocomplete="off" aria-label="Имя в рабочем аккаунте" placeholder="Как в рабочем аккаунте"><button type="submit" class="vote-button">Добавить</button><p class="contest-form-message" aria-live="polite"></p></form>');
+
     $('contest-register').addEventListener('submit',async e=>{
       e.preventDefault(); const btn=e.currentTarget.querySelector('button'); const name=e.currentTarget.elements.name.value.trim();btn.disabled=true;
       try {await post('/api/register',{name});await refresh(); select.value=name;select.dispatchEvent(new Event('change'));closeDialog();notify('Имя добавлено! У вас 5 голосов.');}
