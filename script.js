@@ -10,6 +10,33 @@
   let pendingVoteId = null;
   let lastRefreshId = 0;
   let voteRevision = 0;
+  const FAVORITES_PREFIX = 'contest-v7-favorites:';
+  let favorites = new Set();
+  let choiceIds = new Set();
+  let choosing = false;
+  const favoritesButton = document.createElement('button');
+  favoritesButton.type = 'button';
+  favoritesButton.className = 'small-tool-btn favorites-open';
+  favoritesButton.textContent = '☆ Мои отмеченные (0)';
+  function favoriteKey() { return FAVORITES_PREFIX + normalize(chosenName() || 'guest'); }
+  function loadFavorites() {
+    try { favorites = new Set(JSON.parse(localStorage.getItem(favoriteKey()) || '[]')); }
+    catch { favorites = new Set(); }
+  }
+  function saveFavorites() {
+    localStorage.setItem(favoriteKey(), JSON.stringify([...favorites]));
+    updateFavoriteButtons();
+  }
+  function updateFavoriteButtons() {
+    favoritesButton.textContent = `☆ Мои отмеченные (${favorites.size})`;
+    for (const b of worksNode.querySelectorAll('[data-favorite]')) {
+      const saved = favorites.has(b.dataset.favorite);
+      b.classList.toggle('is-marked', saved);
+      b.setAttribute('aria-pressed', String(saved));
+      b.textContent = saved ? '★ Отмечено' : '☆ Отметить';
+    }
+  }
+
   const normalize = s => String(s || '').trim().replace(/^@+/, '').toLocaleLowerCase('ru');
   const escape = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const url = s => { try { const u = new URL(String(s)); return ['https:','http:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } };
@@ -25,7 +52,7 @@
   const addButton = document.createElement('button'); addButton.type='button'; addButton.className='small-tool-btn'; addButton.textContent='+ Добавить своё имя';
   const finishButton = document.createElement('button'); finishButton.type='button'; finishButton.className='small-tool-btn admin-button'; finishButton.textContent='Завершить голосование'; finishButton.hidden=false;
   const winnersButton = document.createElement('button'); winnersButton.type='button'; winnersButton.className='small-tool-btn'; winnersButton.textContent='🏆 Победители'; winnersButton.hidden=true;
-  tools.append(addButton, finishButton, winnersButton); select.insertAdjacentElement('afterend',tools);
+  tools.append(addButton, favoritesButton, finishButton, winnersButton); select.insertAdjacentElement('afterend',tools);
   const overlay = document.createElement('div'); overlay.className='contest-dialog-overlay'; overlay.hidden=true; overlay.innerHTML='<section class="contest-dialog" role="dialog" aria-modal="true" aria-labelledby="contestDialogTitle"><button type="button" class="contest-dialog-close" aria-label="Закрыть">×</button><div class="contest-dialog-body"></div></section>';
   document.body.append(overlay);
   const dialogBody = overlay.querySelector('.contest-dialog-body');
@@ -98,16 +125,38 @@
       const label=blocked?'Голосование недоступно':closed?'Голосование завершено':voted?'Убрать голос':votedAuthors.has(author)?'За автора уже отдано':'Голосовать';
       const description=f['Описание'] || f['Текст'] || f['Заметка'] || '';
       const link=url(f['Ссылка на пост']);
-      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row"><button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
+      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row"><button type="button" class="favorite-button" data-favorite="${escape(id)}" aria-pressed="${favorites.has(id)}">${favorites.has(id)?'★ Отмечено':'☆ Отметить'}</button><button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
     }).join('');
     worksNode.innerHTML=html || '<p class="contest-empty">Работ пока нет. Проверьте Airtable.</p>';
     updateCounter();
     observeCards();
+    updateFavoriteButtons();
+    observeVideos();
   }
   const cardObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(entries=>{
     for(const entry of entries){if(entry.isIntersecting){entry.target.classList.add('is-visible');cardObserver.unobserve(entry.target);}}
   },{threshold:0.04,rootMargin:'0px 0px 70px 0px'}) : null;
   function observeCards(){for(const card of worksNode.querySelectorAll('.card')){if(cardObserver)cardObserver.observe(card);else card.classList.add('is-visible');}}
+  // On mobile do not decode/play dozens of videos while scrolling.
+  const videoObserver = ('IntersectionObserver' in window) ? new IntersectionObserver(entries => {
+    for (const {target, isIntersecting, intersectionRatio} of entries) {
+      if (isIntersecting && intersectionRatio >= 0.55 && !document.hidden) {
+        target.play().catch(() => {});
+      } else {
+        target.pause();
+      }
+    }
+  }, { threshold: [0, 0.55] }) : null;
+  function observeVideos() {
+    for (const video of worksNode.querySelectorAll('video')) {
+      video.autoplay = false;
+      video.pause();
+      if (videoObserver) videoObserver.observe(video);
+    }
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) worksNode.querySelectorAll('video').forEach(v => v.pause());
+  });
   function pulse(button){button.classList.remove('vote-pop');void button.offsetWidth;button.classList.add('vote-pop');}
   function updateVoteWidgets(){
     const countsMap=counts(), current=normalize(chosenName()), authorMap=authorById();
@@ -127,12 +176,19 @@
   function renderWinners(list) {
     winnerRows=list;
     const medals=['🥇','🥈','🥉','✦','✦'];
-    showDialog(`<div class="winners-hero"><div class="winners-kicker">#WINternational2026 · ФИНАЛ</div><div class="winners-trophy">🏆</div><h2 id="contestDialogTitle">Наши победители</h2><p>Пять авторов, которых выбрали вы</p></div><div class="contest-winners">${list.length?list.map((w,i)=>`<article class="winner-card place-${i+1}"><div class="winner-place"><span>${medals[i]||'✦'}</span><small>${w.rank} место</small></div><div class="winner-main"><div class="winner-name">@${escape(w.username)}</div><div class="winner-votes">♥ ${w.count} ${w.count===1?'голос':'голосов'}</div><div class="winner-actions"><button type="button" data-copy="@${escape(w.username)}" class="winner-action">Скопировать ник</button>${url(w.link)?`<button type="button" data-copy="${escape(url(w.link))}" class="winner-action">Копировать ссылку</button><a href="${escape(url(w.link))}" target="_blank" rel="noopener noreferrer" class="winner-action winner-view">Открыть ↗</a>`:''}</div></div></article>`).join(''):'<p>Пока никто не получил голосов.</p>'}</div>`);
+    showDialog(`<div class="winners-hero"><div class="winners-kicker">#CosplayBattle · ФИНАЛ</div><div class="winners-trophy">🏆</div><h2 id="contestDialogTitle">Наши победители</h2><p>Пять авторов, которых выбрали вы</p></div><div class="contest-winners">${list.length?list.map((w,i)=>`<article class="winner-card place-${i+1}"><div class="winner-place"><span>${medals[i]||'✦'}</span><small>${w.rank} место</small></div><div class="winner-main"><div class="winner-name">@${escape(w.username)}</div><div class="winner-votes">♥ ${w.count} ${w.count===1?'голос':'голосов'}</div><div class="winner-actions"><button type="button" data-copy="@${escape(w.username)}" class="winner-action">Скопировать ник</button>${url(w.link)?`<button type="button" data-copy="${escape(url(w.link))}" class="winner-action">Копировать ссылку</button><a href="${escape(url(w.link))}" target="_blank" rel="noopener noreferrer" class="winner-action winner-view">Открыть ↗</a>`:''}</div></div></article>`).join(''):'<p>Пока никто не получил голосов.</p>'}</div>`);
   }
   async function refresh() {
     const [state,w,v]=await Promise.all([api('/api/state'),api('/api/works'),api('/api/votes')]);
-    closed=state.closed; works=w.records||[]; votes=uniqueVotes(v.records||[]);
-    setNames(state.names||[]); render();
+    closed=state.closed;
+    // Пометка «В конец» в поле «Примечания» отправляет работу вниз списка.
+    // Остальные работы сохраняют порядок, полученный от Airtable.
+    works=(w.records||[]).sort((a,b)=>{
+      const isLast=work=>String(work.fields?.['Примечания']||'').toLocaleLowerCase('ru').includes('в конец');
+      return Number(isLast(a))-Number(isLast(b));
+    });
+    votes=uniqueVotes(v.records||[]);
+    setNames(state.names||[]); loadFavorites(); render();
     if(closed) { const result=await api('/api/winners'); winnerRows=result.winners||[]; winnersButton.hidden=false; }
   }
   addButton.addEventListener('click',()=>{
@@ -143,6 +199,98 @@
       catch(err){e.currentTarget.querySelector('.contest-form-message').textContent=err.message;btn.disabled=false;}
     });
   });
+
+  function openFavorites() {
+    if (!chosenName()) {
+      notify('Сначала выберите своё имя.');
+      select.focus();
+      return;
+    }
+    choosing = true;
+    choiceIds.clear();
+    renderFavorites();
+  }
+  function renderFavorites() {
+    const authorMap = authorById();
+    const mine = votes.filter(v => normalize(v.fields?.['Voter Name']) === normalize(chosenName()));
+    const chosenAuthors = new Set(mine.flatMap(v => {
+      const ids = Array.isArray(v.fields?.['Contest Work']) ? v.fields['Contest Work'] : [v.fields?.['Contest Work']];
+      return ids.map(id => authorMap.get(id));
+    }).filter(Boolean));
+    const max = remaining();
+    const marked = works.filter(w => favorites.has(w.id) && w.fields?.Username);
+    const rows = marked.map(w => {
+      const author = normalize(w.fields.Username);
+      const already = chosenAuthors.has(author);
+      const blocked = isBlocked(w);
+      const selected = choiceIds.has(w.id);
+      const unavailable = closed || blocked || already;
+      const thumb = (w.fields['Конкурсные работы'] || []).find(f => (f.type || '').startsWith('image/'));
+      return `<div class="favorite-row ${selected ? 'selected' : ''}">
+        ${thumb && url(thumb.url) ? `<img loading="lazy" src="${escape(url(thumb.url))}" alt="">` : '<div class="favorite-placeholder">★</div>'}
+        <div class="favorite-row-main"><strong>@${escape(String(w.fields.Username).replace(/^@+/, ''))}</strong><small>${already ? 'Вы уже проголосовали за автора' : blocked ? 'Голосование недоступно' : 'В избранном'}</small></div>
+        <button type="button" class="favorite-remove" data-unmark="${escape(w.id)}" title="Убрать из отмеченных" aria-label="Убрать из отмеченных">×</button>
+        <button type="button" class="favorite-pick ${selected ? 'active' : ''}" data-pick="${escape(w.id)}" ${unavailable ? 'disabled' : ''}>${already ? 'Учтено' : selected ? '✓ Выбрано' : 'Выбрать'}</button>
+      </div>`;
+    }).join('');
+    showDialog(`<div class="favorites-screen"><h2 id="contestDialogTitle">Мои отмеченные</h2><p>Отметки — это не голоса. Выберите авторов и подтвердите выбор.</p>
+      <div class="favorite-summary">Отмечено: <b>${favorites.size}</b> · Уже отдано: <b>${5-max}/5</b> · К выбору: <b>${max}</b></div>
+      <div class="favorite-list">${rows || '<p class="favorite-empty">Пока ничего не отмечено. Закройте окно и нажмите «☆ Отметить» у понравившихся работ.</p>'}</div>
+      <div class="favorites-footer"><span>Выбрано сейчас: <b>${choiceIds.size}</b> из ${max}</span><button class="vote-button" type="button" id="favoriteConfirm" ${!choiceIds.size || busy || closed ? 'disabled' : ''}>Подтвердить ${choiceIds.size} голосов</button></div>
+      <p class="contest-form-message" id="favoritesMessage" aria-live="polite"></p></div>`);
+  }
+  favoritesButton.addEventListener('click', openFavorites);
+  overlay.addEventListener('click', async e => {
+    const rm = e.target.closest('[data-unmark]');
+    if (rm) {
+      favorites.delete(rm.dataset.unmark);
+      choiceIds.delete(rm.dataset.unmark);
+      saveFavorites(); renderFavorites(); return;
+    }
+    const pick = e.target.closest('[data-pick]');
+    if (pick && !pick.disabled) {
+      const id = pick.dataset.pick;
+      const author = normalize(works.find(w => w.id === id)?.fields?.Username);
+      if (choiceIds.has(id)) choiceIds.delete(id);
+      else {
+        if (choiceIds.size >= remaining()) {notify('Больше свободных голосов нет.'); return;}
+        for (const selected of [...choiceIds]) {
+          if (normalize(works.find(w => w.id === selected)?.fields?.Username) === author) choiceIds.delete(selected);
+        }
+        choiceIds.add(id);
+      }
+      renderFavorites(); return;
+    }
+    if (e.target.id !== 'favoriteConfirm' || busy || closed) return;
+    const btn = e.target;
+    if (!choiceIds.size) return;
+    busy = true;
+    btn.disabled = true;
+    btn.textContent = 'Подтверждаем...';
+    const requested = [...choiceIds];
+    let saved = 0;
+    let lastError = '';
+    for (const id of requested) {
+      try {
+        await post('/api/vote', {voterName:chosenName(),contestWork:id,action:'add'});
+        saved++;
+      } catch (err) { lastError = err.message; break; }
+    }
+    try {
+      votes = uniqueVotes((await api('/api/votes')).records || []);
+    } catch (err) { lastError = lastError || 'Не удалось сверить голоса. Обновите страницу.'; }
+    busy = false;
+    choiceIds.clear();
+    render();
+    if (saved === requested.length && !lastError) {
+      closeDialog();
+      notify(`Сохранено голосов: ${saved}`);
+    } else {
+      renderFavorites();
+      $('favoritesMessage').textContent = `Сохранено: ${saved} из ${requested.length}. ${lastError} Проверьте свои голоса перед повтором.`;
+    }
+  });
+
   finishButton.addEventListener('click',()=>{
     showDialog('<h2 id="contestDialogTitle">Только для администратора — Арины</h2><p>Для завершения нужен PIN администратора. После завершения новые голоса и отмены будут заблокированы. Результаты увидят все.</p><form id="contest-finish"><label for="contest-pin">PIN администратора</label><input id="contest-pin" name="pin" type="password" autocomplete="off" required placeholder="Введите PIN"><button type="submit" class="vote-button">Подтвердить завершение</button><p class="contest-form-message" aria-live="polite"></p></form>');
     $('contest-finish').addEventListener('submit',async e=>{
@@ -152,7 +300,7 @@
     });
   });
   winnersButton.addEventListener('click',async()=>{try{renderWinners((await api('/api/winners')).winners||[]);}catch(e){notify(e.message);}});
-  select.addEventListener('change',()=>{localStorage.setItem('contest-voter-name',chosenName());finishButton.hidden=closed;render();});
+  select.addEventListener('change',()=>{localStorage.setItem('contest-voter-name',chosenName());loadFavorites();finishButton.hidden=closed;render();});
   worksNode.addEventListener('click',async e=>{
     const soundButton=e.target.closest('.video-sound-button');
     if(soundButton){
@@ -168,6 +316,8 @@
     if(toggle){const t=toggle.previousElementSibling;const expanded=t.classList.toggle('expanded');toggle.textContent=expanded?'Свернуть ▲':'Читать полностью ▼';return;}
     const arrow=e.target.closest('.slider-next,.slider-prev');
     if(arrow){const slider=arrow.closest('.slider'),box=slider.querySelector('.slider-items');const direction=arrow.classList.contains('slider-next')?1:-1;box.scrollBy({left:direction*box.clientWidth,behavior:'smooth'});return;}
+    const mark=e.target.closest('[data-favorite]');
+    if(mark){const id=mark.dataset.favorite;if(favorites.has(id))favorites.delete(id);else favorites.add(id);saveFavorites();return;}
     const btn=e.target.closest('[data-vote]');if(!btn||busy||closed)return;
     const workId=btn.dataset.vote;
     if(btn.disabled)return;
@@ -200,5 +350,45 @@
   });
   // Remove legacy modals/easter eggs from the previous version.
   for(const id of ['waitModalOverlay','modalOverlay']) $(id)?.remove();
-  refresh().catch(err=>{console.error(err);worksNode.innerHTML='<p class="contest-empty">Не удалось загрузить конкурсные работы: '+escape(err.message)+'</p>';notify('Ошибка загрузки. Проверьте настройки Airtable.');});
+  function loadContest() {
+    refresh().catch(err=>{
+      console.error(err);
+      worksNode.innerHTML='<p class="contest-empty">Не удалось загрузить конкурсные работы: '+escape(err.message)+'</p>';
+      notify('Ошибка загрузки. Проверьте настройки Airtable.');
+    });
+  }
+  const accessWall = $('accessWall');
+  const accessForm = $('accessForm');
+  const accessError = $('accessError');
+  function grantAccess() {
+    document.body.classList.remove('access-locked');
+    document.body.classList.add('access-granted');
+    if (accessWall) accessWall.hidden = true;
+    loadContest();
+  }
+  if (accessForm) {
+    accessForm.addEventListener('submit', async e => {
+      e.preventDefault();
+      const button = $('accessSubmit');
+      const field = $('accessPin');
+      button.disabled = true;
+      accessError.textContent = '';
+      try {
+        await post('/api/access', { pin: field.value });
+        field.value = '';
+        grantAccess();
+      } catch (err) {
+        accessError.textContent = err.message || 'Не удалось войти';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+  api('/api/access').then(data => {
+    if (data.authenticated) grantAccess();
+    else $('accessPin')?.focus();
+  }).catch(err => {
+    accessError.textContent = 'Не удалось проверить доступ. Обновите страницу.';
+    console.error(err);
+  });
 })();
