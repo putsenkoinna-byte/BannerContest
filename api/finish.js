@@ -9,6 +9,9 @@ export default async function handler(req,res) {
   try {
     const state = await getClosedState();
     const [works,votes] = await Promise.all([listAll(WORKS_TABLE_ID),listAll(VOTES_TABLE_ID)]);
+    if (!state.closed && votes.length === 0) {
+      return res.status(409).json({error:'Нельзя завершить голосование: пока нет ни одного голоса.'});
+    }
     if (!state.closed) {
       // Save exactly which vote records existed at the moment of closure.
       // Removing any one of them later in Airtable reopens the contest.
