@@ -38,10 +38,40 @@ export async function listAll(tableId) {
   } while (offset);
   return records;
 }
+// Key keeps an exact snapshot of Airtable vote record IDs when the contest closes.
+// No new Airtable fields are required: 'contest|recXXX,recYYY'.
+// Any deleted vote ID reopens the contest automatically. New votes never reopen it.
+export const getSnapshotKey = votes => 'contest|' + votes.map(v => v.id).sort().join(',');
 export async function getClosedState() {
   const rows = await listAll(SETTINGS_TABLE_ID);
-  const row = rows.find(r => key(r.fields?.Key) === 'contest');
-  return { closed: Boolean(row?.fields?.Closed), record: row };
+  const row = rows.find(r => {
+    const value = String(r.fields?.Key || '');
+    return value === 'contest' || value.startsWith('contest|');
+  });
+  if (!row?.fields?.Closed) return { closed: false, record: row };
+
+  const rawKey = String(row.fields?.Key || '');
+  const hasSnapshot = rawKey.startsWith('contest|');
+  const savedIds = hasSnapshot ? rawKey.slice('contest|'.length).split(',').filter(Boolean) : [];
+
+  // Earlier versions recorded Closed only; they did not record a snapshot.
+  // Such an old closure cannot be matched to removed votes, so reset once.
+  if (!hasSnapshot) {
+    await airtable(`${SETTINGS_TABLE_ID}/${row.id}`, {
+      method: 'PATCH', body: JSON.stringify({ fields: { Key: 'contest', Closed: false } })
+    });
+    return { closed: false, record: { ...row, fields: { ...row.fields, Closed: false } } };
+  }
+
+  const current = new Set((await listAll(VOTES_TABLE_ID)).map(v => v.id));
+  const deleted = savedIds.some(id => !current.has(id));
+  if (deleted) {
+    await airtable(`${SETTINGS_TABLE_ID}/${row.id}`, {
+      method: 'PATCH', body: JSON.stringify({ fields: { Key: 'contest', Closed: false } })
+    });
+    return { closed: false, record: { ...row, fields: { ...row.fields, Key: 'contest', Closed: false } } };
+  }
+  return { closed: true, record: row };
 }
 export async function getVoterNames() {
   const rows = await listAll(VOTERS_TABLE_ID);
