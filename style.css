@@ -289,3 +289,16 @@ body.access-granted > .sticky-counter {position:relative;z-index:1;}
  .access-panel{backdrop-filter:none;}
 }
 @media(prefers-reduced-motion:reduce){.access-panel{backdrop-filter:none}}
+
+/* V11: smaller, softer and more spacious logo pattern on both desktop/mobile. */
+body.access-granted::before, .access-wall::before {
+  background-size:clamp(135px,12vw,190px) auto;
+  opacity:.022;
+  background-position:25px 15px;
+}
+@media(max-width:640px){
+  body.access-granted::before, .access-wall::before {
+    background-size:145px auto;
+    opacity:.018;
+  }
+}
