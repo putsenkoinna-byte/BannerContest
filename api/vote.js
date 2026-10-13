@@ -12,6 +12,7 @@ export default async function handler(req,res) {
     if (!names.some(n => key(n) === key(voterName))) return res.status(403).json({error:'Сначала зарегистрируйте имя'});
     const work = works.find(w => w.id === contestWork);
     if (!work || !work.fields?.Username || !(work.fields?.['Конкурсные работы'] || []).length) return res.status(404).json({error:'Работа не найдена'});
+    if (/без\s+голосования/i.test(String(work.fields?.['Примечания'] || ''))) return res.status(403).json({error:'Голосование за эту работу недоступно'});
     const canonical = canonicalVotes(works, votes);
     const own = canonical.filter(v => key(v.fields?.['Voter Name']) === key(voterName));
     const existing = own.find(v => linkedIds(v).includes(contestWork));
