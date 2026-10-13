@@ -28,7 +28,7 @@
     updateFavoriteButtons();
   }
   function updateFavoriteButtons() {
-    favoritesButton.textContent = `☆ Мои отмеченные (${favorites.size})`;
+    favoritesButton.textContent = `☆ Мои отмеченные (${[...favorites].filter(id => !isBlocked(works.find(w => w.id === id))).length})`;
     for (const b of worksNode.querySelectorAll('[data-favorite]')) {
       const saved = favorites.has(b.dataset.favorite);
       b.classList.toggle('is-marked', saved);
@@ -125,7 +125,7 @@
       const label=blocked?'Голосование недоступно':closed?'Голосование завершено':voted?'Убрать голос':votedAuthors.has(author)?'За автора уже отдано':'Голосовать';
       const description=f['Описание'] || f['Текст'] || f['Заметка'] || '';
       const link=url(f['Ссылка на пост']);
-      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row"><button type="button" class="favorite-button" data-favorite="${escape(id)}" aria-pressed="${favorites.has(id)}">${favorites.has(id)?'★ Отмечено':'☆ Отметить'}</button><button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
+      return `<article class="card ${voted?'is-voted':''}" data-work-id="${escape(id)}">${media(f['Конкурсные работы'])}<div class="card-content"><div class="card-header"><div class="username">@${escape(String(f.Username).replace(/^@+/,''))}</div><div class="votes-badge">❤️ ${count.get(id)||0}</div></div>${description?`<div class="work-text-container"><div class="work-text">${escape(description)}</div>${String(description).length>90?'<button type="button" class="text-toggle-btn">Читать полностью ▼</button>':''}</div>`:''}<div class="button-row">${!blocked?`<button type="button" class="favorite-button" data-favorite="${escape(id)}" aria-pressed="${favorites.has(id)}">${favorites.has(id)?'★ Отмечено':'☆ Отметить'}</button>`:''}<button type="button" class="vote-button ${voted?'remove':''} ${pendingVoteId===id?'is-saving':''}" data-vote="${escape(id)}" ${disabled?'disabled':''}>${label}</button>${link?`<a class="link-button" aria-label="Открыть пост" target="_blank" rel="noopener noreferrer" href="${escape(link)}">🔗</a>`:''}</div></div></article>`;
     }).join('');
     worksNode.innerHTML=html || '<p class="contest-empty">Работ пока нет. Проверьте Airtable.</p>';
     updateCounter();
@@ -211,6 +211,7 @@
     renderFavorites();
   }
   function renderFavorites() {
+    for (const id of choiceIds) if (isBlocked(works.find(w=>w.id===id))) choiceIds.delete(id);
     const authorMap = authorById();
     const mine = votes.filter(v => normalize(v.fields?.['Voter Name']) === normalize(chosenName()));
     const chosenAuthors = new Set(mine.flatMap(v => {
@@ -218,7 +219,7 @@
       return ids.map(id => authorMap.get(id));
     }).filter(Boolean));
     const max = remaining();
-    const marked = works.filter(w => favorites.has(w.id) && w.fields?.Username);
+    const marked = works.filter(w => favorites.has(w.id) && w.fields?.Username && !isBlocked(w));
     const rows = marked.map(w => {
       const author = normalize(w.fields.Username);
       const already = chosenAuthors.has(author);
@@ -234,7 +235,7 @@
       </div>`;
     }).join('');
     showDialog(`<div class="favorites-screen"><h2 id="contestDialogTitle">Мои отмеченные</h2><p>Отметки — это не голоса. Выберите авторов и подтвердите выбор.</p>
-      <div class="favorite-summary">Отмечено: <b>${favorites.size}</b> · Уже отдано: <b>${5-max}/5</b> · К выбору: <b>${max}</b></div>
+      <div class="favorite-summary">Отмечено: <b>${marked.length}</b> · Уже отдано: <b>${5-max}/5</b> · К выбору: <b>${max}</b></div>
       <div class="favorite-list">${rows || '<p class="favorite-empty">Пока ничего не отмечено. Закройте окно и нажмите «☆ Отметить» у понравившихся работ.</p>'}</div>
       <div class="favorites-footer"><span>Выбрано сейчас: <b>${choiceIds.size}</b> из ${max}</span><button class="vote-button" type="button" id="favoriteConfirm" ${!choiceIds.size || busy || closed ? 'disabled' : ''}>Подтвердить ${choiceIds.size} голосов</button></div>
       <p class="contest-form-message" id="favoritesMessage" aria-live="polite"></p></div>`);
@@ -317,7 +318,7 @@
     const arrow=e.target.closest('.slider-next,.slider-prev');
     if(arrow){const slider=arrow.closest('.slider'),box=slider.querySelector('.slider-items');const direction=arrow.classList.contains('slider-next')?1:-1;box.scrollBy({left:direction*box.clientWidth,behavior:'smooth'});return;}
     const mark=e.target.closest('[data-favorite]');
-    if(mark){const id=mark.dataset.favorite;if(favorites.has(id))favorites.delete(id);else favorites.add(id);saveFavorites();return;}
+    if(mark){const id=mark.dataset.favorite;if(isBlocked(works.find(w=>w.id===id)))return;if(favorites.has(id))favorites.delete(id);else favorites.add(id);saveFavorites();return;}
     const btn=e.target.closest('[data-vote]');if(!btn||busy||closed)return;
     const workId=btn.dataset.vote;
     if(btn.disabled)return;
