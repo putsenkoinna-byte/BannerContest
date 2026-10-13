@@ -327,3 +327,48 @@ body.access-granted::before, .access-wall::before {
 .favorite-preview-navigation button{border:1px solid #555576;background:#282a40;color:#fff;border-radius:10px;padding:10px 14px;cursor:pointer;}
 .favorite-preview-navigation button:disabled{opacity:.35;cursor:default;}
 @media(max-width:600px){.favorite-preview-actions{grid-template-columns:1fr;}.favorite-preview-media .media-frame{max-height:53dvh;}.favorite-row .favorite-open-preview img,.favorite-row .favorite-open-preview .favorite-placeholder{width:56px!important;min-width:56px!important;max-width:56px!important;height:63px!important;min-height:63px!important;max-height:63px!important;}}
+/* Плавающая кнопка отмеченных работ */
+.favorites-open:not([hidden]) {
+  position: fixed;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  right: 24px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  min-height: 52px;
+  padding: 12px 20px;
+  border: 1px solid #948bff !important;
+  border-radius: 999px;
+  background: #5148c9;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 750;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.favorites-open:not([hidden]):hover {
+  background: #665bea;
+}
+
+/* Место под кнопку, чтобы она не закрывала карточки */
+body.access-granted {
+  padding-bottom: 90px;
+}
+
+@media (max-width: 600px) {
+  .favorites-open:not([hidden]) {
+    right: 14px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    min-height: 48px;
+    padding: 10px 15px;
+    font-size: 13px;
+  }
+}
+
+/* В крупном просмотре остаётся одна основная кнопка */
+.favorite-preview-actions {
+  grid-template-columns: 1fr;
+}
