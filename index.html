@@ -5,13 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f1016">
 <title>#CosplayBattle — голосование</title>
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
-<body>
+<body class="access-locked">
+<div class="access-wall" id="accessWall">
+  <div class="access-panel">
+    <div class="access-lock">🔐</div>
+    <div class="access-brand">#CosplayBattle</div>
+    <h1>Вход на голосование</h1>
+    <p>Введите код доступа, который вам передали организаторы конкурса.</p>
+    <form id="accessForm">
+      <label for="accessPin">Код доступа</label>
+      <input id="accessPin" type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required placeholder="Введите PIN" maxlength="20">
+      <button type="submit" id="accessSubmit">Войти</button>
+      <p class="access-error" id="accessError" role="alert" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
 <header class="header"><div class="logo-group"><div class="brand-badge">#CosplayBattle</div></div></header>
 <main class="container">
 <section class="employee-box" aria-label="Выбор голосующего">
-<label for="employeeSelect">Кто голосует?</label>
+<label for="employeeSelect">ВЫ КТО ТАКИЕ?</label>
 <div class="select-wrapper"><select id="employeeSelect"><option value="">Загружаем имена...</option></select></div>
 <div id="votesLeft" class="votes-counter" aria-live="polite"></div>
 </section>
@@ -19,6 +33,6 @@
 </main>
 <div id="stickyCounter" class="sticky-counter"><span id="stickyCounterText">Осталось голосов: 5</span></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
-<script src="script.js?v=6" defer></script>
+<script src="script.js?v=8" defer></script>
 </body>
 </html>
